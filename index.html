@@ -1,1 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MacroSolver</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: #fff; color: #111; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; padding-bottom: 60px; }
 
+header { padding: 20px 16px 14px; border-bottom: 2px solid #111; display: flex; align-items: baseline; gap: 10px; }
+header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+header .ver { font-size: 10px; color: #888; letter-spacing: 2px; text-transform: uppercase; }
+
+.prog { display: flex; gap: 4px; padding: 12px 16px 0; }
+.dot { height: 4px; flex: 1; background: #e0e0e0; border-radius: 2px; transition: background .3s; }
+.dot.active { background: #111; }
+.dot.done { background: #999; }
+
+.wrap { padding: 0 16px; }
+.lbl { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; margin: 20px 0 10px; display: block; }
+.divider { height: 1px; background: #e0e0e0; margin: 20px 0; }
+.err { color: #c00; font-size: 12px; margin-top: 6px; min-height: 16px; }
+
+/* SEARCH */
+.sw { position: relative; z-index: 10; }
+.sinput { width: 100%; background: #f5f5f5; border: 2px solid #ddd; border-radius: 10px; color: #111; font-size: 15px; padding: 13px 14px; outline: none; transition: border-color .2s; font-family: inherit; }
+.sinput:focus { border-color: #111; background: #fff; }
+.sinput::placeholder { color: #aaa; }
+
+/* DROPDOWN */
+.dd { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 2px solid #111; border-radius: 10px; overflow: hidden; z-index: 9999; max-height: 320px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.dd.open { display: block; }
+.ddg { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; padding: 8px 14px 5px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; }
+.ddi { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; gap: 8px; background: #fff; }
+.ddi:last-child { border-bottom: none; }
+.ddi:active { background: #f0f0f0; }
+.ddi .fn { font-size: 14px; color: #111; flex: 1; }
+.ddi .fn em { font-style: normal; font-weight: 700; background: #fff176; padding: 0 2px; border-radius: 2px; }
+.ddi .dr { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.ddi .dm { font-size: 10px; color: #888; text-align: right; line-height: 1.5; }
+.ddi .ul { font-size: 9px; color: #666; text-decoration: none; border: 1px solid #ccc; border-radius: 4px; padding: 3px 7px; white-space: nowrap; background: #f9f9f9; }
+.ddempty { padding: 16px; font-size: 13px; color: #888; text-align: center; }
+
+/* CHIP */
+.chip { display: none; align-items: center; gap: 8px; background: #f0f9e8; border: 2px solid #4caf50; border-radius: 8px; padding: 8px 12px; margin-top: 10px; }
+.chip.show { display: flex; }
+.chip .cn { flex: 1; font-size: 13px; font-weight: 700; color: #1b5e20; }
+.chip .cm { font-size: 11px; color: #555; }
+.chip .cu { font-size: 10px; color: #555; text-decoration: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px; background: #fff; }
+.chip .cx { color: #999; font-size: 20px; cursor: pointer; line-height: 1; padding: 0 2px; }
+
+/* MACRO INPUTS */
+.mrow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.mf { background: #f5f5f5; border: 2px solid #ddd; border-radius: 10px; padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 4px; }
+.mf:focus-within { border-color: #111; background: #fff; }
+.mf label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+.mf.p label { color: #1565c0; }
+.mf.c label { color: #e65100; }
+.mf.f label { color: #6a1b9a; }
+.mf input { background: none; border: none; outline: none; color: #111; font-size: 26px; font-weight: 800; width: 100%; -moz-appearance: textfield; font-family: inherit; }
+.mf input::-webkit-outer-spin-button, .mf input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.mf .unit { font-size: 10px; color: #888; }
+
+.sbtn { width: 100%; margin-top: 16px; background: #111; border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 17px; cursor: pointer; font-family: inherit; }
+.sbtn:active { background: #333; }
+
+/* FAT */
+.fat-box { background: #fff8f0; border: 2px solid #ffcc80; border-radius: 10px; padding: 14px; }
+.fat-hdr { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fat-title { font-size: 13px; font-weight: 700; color: #bf360c; }
+.fat-sub { font-size: 11px; color: #888; margin-top: 2px; }
+.fat-btn { background: #bf360c; border: none; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 700; padding: 8px 14px; cursor: pointer; white-space: nowrap; font-family: inherit; flex-shrink: 0; }
+.fat-search { display: none; margin-top: 12px; }
+.fat-search.open { display: block; }
+
+/* RESULTS */
+#results { display: none; }
+.rc { background: #fafafa; border: 2px solid #e0e0e0; border-radius: 10px; padding: 16px; margin-bottom: 10px; }
+.rch { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; gap: 8px; }
+.rcn { font-size: 18px; font-weight: 800; color: #111; }
+.rcu { font-size: 10px; color: #666; text-decoration: none; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; white-space: nowrap; background: #fff; flex-shrink: 0; margin-top: 4px; }
+.rcg { font-size: 52px; font-weight: 800; color: #111; line-height: 1; margin: 6px 0 6px; }
+.rcg span { font-size: 16px; font-weight: 400; color: #888; }
+.rcm { display: flex; gap: 12px; font-size: 13px; flex-wrap: wrap; margin-bottom: 8px; }
+.rcm .mp { color: #1565c0; font-weight: 700; }
+.rcm .mc { color: #e65100; font-weight: 700; }
+.rcm .mf2 { color: #6a1b9a; font-weight: 700; }
+
+/* TOGGLE */
+.trow { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding-top: 10px; border-top: 1px solid #e0e0e0; }
+.tlbl { font-size: 12px; color: #555; }
+.toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.tslider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 24px; transition: .25s; }
+.tslider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .25s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.toggle input:checked + .tslider { background: #111; }
+.toggle input:checked + .tslider:before { transform: translateX(20px); }
+.tmode { font-size: 12px; font-weight: 700; color: #111; min-width: 52px; }
+.tnote { font-size: 11px; color: #888; font-style: italic; margin-top: 4px; }
+
+/* SUMMARY */
+.st { border: 2px solid #e0e0e0; border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+.sr { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #e0e0e0; align-items: center; }
+.sr:last-child { border-bottom: none; }
+.sr.hdr { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; background: #f5f5f5; padding: 9px 14px; }
+.sr .mp { color: #1565c0; font-weight: 700; }
+.sr .mc { color: #e65100; font-weight: 700; }
+.sr .mft { color: #6a1b9a; font-weight: 700; }
+.badge { font-size: 11px; padding: 3px 8px; border-radius: 100px; font-weight: 700; display: inline-block; }
+.badge.ok { background: #e8f5e9; color: #2e7d32; }
+.badge.bad { background: #ffebee; color: #c62828; }
+
+.warn { background: #fffde7; border: 2px solid #f9a825; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #555; margin-bottom: 12px; line-height: 1.6; }
+.calrow { background: #111; border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.calrow .cl { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; }
+.calrow .cv { font-size: 30px; font-weight: 800; color: #fff; }
+
+.rbtn { width: 100%; background: none; border: 2px solid #ddd; border-radius: 10px; color: #888; font-size: 14px; padding: 14px; cursor: pointer; font-family: inherit; margin-bottom: 20px; }
+.rbtn:active { border-color: #111; color: #111; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MacroSolver</h1>
+  <span class="ver">v4.0</span>
+</header>
+
+<div class="prog">
+  <div class="dot active" id="dot1"></div>
+  <div class="dot" id="dot2"></div>
+  <div class="dot" id="dot3"></div>
+</div>
+
+<div class="wrap">
+
+  <div id="step1">
+    <span class="lbl">Step 1 — Protein</span>
+    <div class="sw">
+      <input class="sinput" id="pi" type="text" placeholder="Type: chicken, salmon, 80/20, turkey…"
+        autocomplete="off"
+        oninput="onSearch(this,'protein')"
+        onfocus="onFocus('protein')"
+        onblur="onBlur('protein')">
+      <div class="dd" id="pdd"></div>
+    </div>
+    <div class="chip" id="pchip">
+      <span>✓</span><span class="cn" id="pcn"></span>
+      <span class="cm" id="pcm"></span>
+      <a class="cu" id="pcu" href="#" target="_blank" rel="noopener">USDA ↗</a>
+      <span class="cx" onclick="clearSel('protein')">×</span>
+    </div>
+    <div class="err" id="ep"></div>
+  </div>
+
+  <div id="step2" style="display:none">
+    <div class="divider"></div>
+    <span class="lbl">Step 2 — Carb</span>
+    <div class="sw">
+      <input class="sinput" id="ci" type="text" placeholder="Type: white rice, sweet potato, pasta…"
+        autocomplete="off"
+        oninput="onSearch(this,'carb')"
+        onfocus="onFocus('carb')"
+        onblur="onBlur('carb')">
+      <div class="dd" id="cdd"></div>
+    </div>
+    <div class="chip" id="cchip">
+      <span>✓</span><span class="cn" id="ccn"></span>
+      <span class="cm" id="ccm"></span>
+      <a class="cu" id="ccu" href="#" target="_blank" rel="noopener">USDA ↗</a>
+      <span class="cx" onclick="clearSel('carb')">×</span>
+    </div>
+    <div class="err" id="ec"></div>
+  </div>
+
+  <div id="step3" style="display:none">
+    <div class="divider"></div>
+    <div class="fat-box">
+      <div class="fat-hdr">
+        <div>
+          <div class="fat-title">+ Fat source <span style="font-weight:400;font-size:11px">(optional)</span></div>
+          <div class="fat-sub" id="fat-sub">Enables 3-food solver — better fat accuracy</div>
+        </div>
+        <button class="fat-btn" id="fat-btn" onclick="toggleFat()">+ Add</button>
+      </div>
+      <div class="fat-search" id="fat-search">
+        <div class="sw" style="margin-top:10px">
+          <input class="sinput" id="fi" type="text" placeholder="Type: butter, olive oil, avocado…"
+            autocomplete="off"
+            oninput="onSearch(this,'fat')"
+            onfocus="onFocus('fat')"
+            onblur="onBlur('fat')">
+          <div class="dd" id="fdd"></div>
+        </div>
+        <div class="chip" id="fchip">
+          <span>✓</span><span class="cn" id="fcn"></span>
+          <span class="cm" id="fcm"></span>
+          <a class="cu" id="fcu" href="#" target="_blank" rel="noopener">USDA ↗</a>
+          <span class="cx" onclick="clearSel('fat')">×</span>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <span class="lbl">Step 3 — Your macro targets</span>
+    <div class="mrow">
+      <div class="mf p"><label>Protein</label><input type="number" id="tp" placeholder="180" min="0"><div class="unit">grams</div></div>
+      <div class="mf c"><label>Carbs</label>  <input type="number" id="tc" placeholder="200" min="0"><div class="unit">grams</div></div>
+      <div class="mf f"><label>Fat</label>    <input type="number" id="tf" placeholder="60"  min="0"><div class="unit">grams</div></div>
+    </div>
+    <div class="err" id="em"></div>
+    <button class="sbtn" onclick="solve()">SOLVE →</button>
+  </div>
+
+  <div id="results">
+    <div class="divider"></div>
+    <span class="lbl">Your portions</span>
+    <div id="rcards"></div>
+    <div class="warn" id="warn" style="display:none"></div>
+    <div class="st">
+      <div class="sr hdr"><div>Macro</div><div>Target</div><div>Actual</div><div>Gap</div></div>
+      <div class="sr"><div class="mp">Protein</div><div id="spt">—</div><div id="spa">—</div><div id="spg">—</div></div>
+      <div class="sr"><div class="mc">Carbs</div>  <div id="sct">—</div><div id="sca">—</div><div id="scg">—</div></div>
+      <div class="sr"><div class="mft">Fat</div>   <div id="sft">—</div><div id="sfa">—</div><div id="sfg">—</div></div>
+    </div>
+    <div class="calrow">
+      <div class="cl">Est. Calories</div>
+      <div class="cv" id="tcal">—</div>
+    </div>
+    <button class="rbtn" onclick="reset()">↺ Start Over</button>
+  </div>
+
+</div>
+
+<script>
+const DB=[
+  {key:'chicken_breast',    name:'Chicken Breast',            cat:'Chicken',     cooked:{p:31.0,c:0.0,f:3.6},  raw:{p:21.0,c:0.0,f:2.6},  yld:0.75,fdcC:'171534',fdcR:'171477',hc:true},
+  {key:'chicken_thigh',     name:'Chicken Thigh',             cat:'Chicken',     cooked:{p:25.0,c:0.0,f:8.0},  raw:{p:17.0,c:0.0,f:5.5},  yld:0.75,fdcC:'171477',fdcR:'171469',hc:true},
+  {key:'chicken_drumstick', name:'Chicken Drumstick',         cat:'Chicken',     cooked:{p:24.0,c:0.0,f:5.7},  raw:{p:17.0,c:0.0,f:4.0},  yld:0.74,fdcC:'172376',fdcR:'172378',hc:true},
+  {key:'chicken_wing',      name:'Chicken Wing (meat only)',  cat:'Chicken',     cooked:{p:30.0,c:0.0,f:8.0},  raw:{p:20.0,c:0.0,f:5.5},  yld:0.73,fdcC:'172392',fdcR:'172393',hc:true},
+  {key:'beef_7030',name:'Ground Beef 70/30',cat:'Ground Beef',cooked:{p:22.0,c:0.0,f:21.0},raw:{p:14.0,c:0.0,f:30.0},yld:0.70,fdcC:'174036',fdcR:'174037',hc:true},
+  {key:'beef_8020',name:'Ground Beef 80/20',cat:'Ground Beef',cooked:{p:25.0,c:0.0,f:15.0},raw:{p:17.0,c:0.0,f:20.0},yld:0.71,fdcC:'174032',fdcR:'174033',hc:true},
+  {key:'beef_8515',name:'Ground Beef 85/15',cat:'Ground Beef',cooked:{p:27.0,c:0.0,f:11.0},raw:{p:18.0,c:0.0,f:15.0},yld:0.72,fdcC:'174030',fdcR:'174031',hc:true},
+  {key:'beef_9010',name:'Ground Beef 90/10',cat:'Ground Beef',cooked:{p:26.0,c:0.0,f:11.0},raw:{p:19.0,c:0.0,f:10.0},yld:0.72,fdcC:'174028',fdcR:'174029',hc:true},
+  {key:'beef_937', name:'Ground Beef 93/7', cat:'Ground Beef',cooked:{p:26.0,c:0.0,f:7.0}, raw:{p:20.0,c:0.0,f:7.0}, yld:0.73,fdcC:'174026',fdcR:'174027',hc:true},
+  {key:'salmon', name:'Salmon',           cat:'Fish',cooked:{p:25.0,c:0.0,f:13.0},raw:{p:20.0,c:0.0,f:12.0},yld:0.80,fdcC:'175168',fdcR:'175167',hc:true},
+  {key:'tuna',   name:'Tuna (canned)',    cat:'Fish',cooked:{p:26.0,c:0.0,f:1.0}, raw:{p:26.0,c:0.0,f:1.0}, yld:1.00,fdcC:'172006',fdcR:'172006',hc:false},
+  {key:'tilapia',name:'Tilapia',          cat:'Fish',cooked:{p:26.0,c:0.0,f:2.7}, raw:{p:20.0,c:0.0,f:2.0}, yld:0.82,fdcC:'175177',fdcR:'175176',hc:true},
+  {key:'shrimp', name:'Shrimp',           cat:'Fish',cooked:{p:24.0,c:0.2,f:1.7}, raw:{p:18.0,c:0.2,f:1.2}, yld:0.80,fdcC:'175180',fdcR:'175179',hc:true},
+  {key:'pork_tenderloin',name:'Pork Tenderloin',          cat:'Pork',cooked:{p:26.0,c:0.0,f:3.0}, raw:{p:21.0,c:0.0,f:2.5},yld:0.76,fdcC:'167903',fdcR:'167904',hc:true},
+  {key:'pork_chop',      name:'Pork Chop (center lean)',  cat:'Pork',cooked:{p:28.0,c:0.0,f:10.0},raw:{p:19.0,c:0.0,f:7.0}, yld:0.77,fdcC:'167905',fdcR:'167906',hc:true},
+  {key:'pork_ribs',      name:'Pork Ribs (country-style)',cat:'Pork',cooked:{p:29.0,c:0.0,f:11.0},raw:{p:18.0,c:0.0,f:8.0}, yld:0.72,fdcC:'167879',fdcR:'167880',hc:true},
+  {key:'eggs',   name:'Whole Eggs',            cat:'Other',cooked:{p:13.0,c:1.0,f:11.0},raw:{p:12.5,c:0.7,f:10.0},yld:0.88,fdcC:'173423',fdcR:'748967',hc:true},
+  {key:'turkey', name:'Turkey Breast',         cat:'Other',cooked:{p:29.0,c:0.0,f:1.0}, raw:{p:21.0,c:0.0,f:1.0}, yld:0.75,fdcC:'171489',fdcR:'171490',hc:true},
+  {key:'cottage',name:'Cottage Cheese (lowfat)',cat:'Other',cooked:{p:11.0,c:4.0,f:1.0}, raw:{p:11.0,c:4.0,f:1.0}, yld:1.00,fdcC:'172179',fdcR:'172179',hc:false},
+  {key:'greek',  name:'Greek Yogurt (nonfat)', cat:'Other',cooked:{p:10.0,c:3.6,f:0.4}, raw:{p:10.0,c:3.6,f:0.4}, yld:1.00,fdcC:'170903',fdcR:'170903',hc:false},
+  {key:'white_rice',   name:'White Rice',           cat:'Rice & Grain',cooked:{p:2.7,c:28.0,f:0.3},raw:{p:7.1,c:78.0,f:0.6},yld:2.8,fdcC:'169767',fdcR:'169756',hc:true},
+  {key:'brown_rice',   name:'Brown Rice',           cat:'Rice & Grain',cooked:{p:2.6,c:23.0,f:0.9},raw:{p:7.5,c:73.0,f:2.7},yld:2.5,fdcC:'168880',fdcR:'169704',hc:true},
+  {key:'oats',         name:'Oats (cooked)',         cat:'Rice & Grain',cooked:{p:2.5,c:12.0,f:1.5},raw:{p:13.0,c:66.0,f:7.0},yld:2.5,fdcC:'173904',fdcR:'173904',hc:true},
+  {key:'quinoa',       name:'Quinoa',               cat:'Rice & Grain',cooked:{p:4.4,c:22.0,f:1.9},raw:{p:14.1,c:64.0,f:6.1},yld:2.8,fdcC:'168917',fdcR:'168917',hc:true},
+  {key:'pasta',        name:'Pasta (cooked)',        cat:'Rice & Grain',cooked:{p:5.0,c:31.0,f:0.9},raw:{p:13.0,c:75.0,f:1.9},yld:2.2,fdcC:'168936',fdcR:'168935',hc:true},
+  {key:'sweet_potato', name:'Sweet Potato',         cat:'Potato',cooked:{p:1.6,c:20.0,f:0.1},raw:{p:1.6,c:20.0,f:0.1},yld:0.97,fdcC:'168482',fdcR:'168482',hc:true},
+  {key:'russet',       name:'Russet Potato (baked)',cat:'Potato',cooked:{p:2.5,c:17.0,f:0.1},raw:{p:2.0,c:17.0,f:0.1},yld:0.97,fdcC:'170438',fdcR:'170032',hc:true},
+  {key:'yukon',        name:'Yukon Gold Potato',    cat:'Potato',cooked:{p:2.0,c:17.0,f:0.1},raw:{p:2.0,c:17.0,f:0.1},yld:0.97,fdcC:'170032',fdcR:'170032',hc:true},
+  {key:'black_beans',  name:'Black Beans',          cat:'Legume',cooked:{p:8.9,c:23.0,f:0.4},raw:{p:21.6,c:62.0,f:0.9},yld:2.3,fdcC:'173735',fdcR:'173744',hc:true},
+  {key:'lentils',      name:'Lentils',              cat:'Legume',cooked:{p:9.0,c:20.0,f:0.4},raw:{p:25.0,c:60.0,f:1.1},yld:2.5,fdcC:'172421',fdcR:'172420',hc:true},
+  {key:'ezekiel',      name:'Ezekiel Bread',        cat:'Bread', cooked:{p:9.0,c:34.0,f:1.7},raw:{p:9.0,c:34.0,f:1.7},yld:1.0,fdcC:'370752',fdcR:'370752',hc:false},
+  {key:'banana',       name:'Banana',               cat:'Fruit', cooked:{p:1.1,c:23.0,f:0.3},raw:{p:1.1,c:23.0,f:0.3},yld:1.0,fdcC:'173944',fdcR:'173944',hc:false},
+  {key:'butter',       name:'Butter',        cat:'Fat',cooked:{p:0.9,c:0.1,f:81.0}, raw:{p:0.9,c:0.1,f:81.0}, yld:1.0,fdcC:'173410',fdcR:'173410',hc:false},
+  {key:'ghee',         name:'Ghee',          cat:'Fat',cooked:{p:0.3,c:0.0,f:99.5}, raw:{p:0.3,c:0.0,f:99.5}, yld:1.0,fdcC:'171314',fdcR:'171314',hc:false},
+  {key:'olive_oil',    name:'Olive Oil',      cat:'Fat',cooked:{p:0.0,c:0.0,f:100.0},raw:{p:0.0,c:0.0,f:100.0},yld:1.0,fdcC:'171413',fdcR:'171413',hc:false},
+  {key:'coconut_oil',  name:'Coconut Oil',    cat:'Fat',cooked:{p:0.0,c:0.0,f:100.0},raw:{p:0.0,c:0.0,f:100.0},yld:1.0,fdcC:'172336',fdcR:'172336',hc:false},
+  {key:'avocado',      name:'Avocado',        cat:'Fat',cooked:{p:2.0,c:9.0,f:15.0}, raw:{p:2.0,c:9.0,f:15.0}, yld:1.0,fdcC:'171706',fdcR:'171706',hc:false},
+  {key:'peanut_butter',name:'Peanut Butter',  cat:'Fat',cooked:{p:25.0,c:20.0,f:50.0},raw:{p:25.0,c:20.0,f:50.0},yld:1.0,fdcC:'172470',fdcR:'172470',hc:false},
+  {key:'almond_butter',name:'Almond Butter',  cat:'Fat',cooked:{p:21.0,c:19.0,f:55.0},raw:{p:21.0,c:19.0,f:55.0},yld:1.0,fdcC:'168588',fdcR:'168588',hc:false},
+  {key:'almonds',      name:'Almonds',        cat:'Fat',cooked:{p:21.0,c:22.0,f:49.0},raw:{p:21.0,c:22.0,f:49.0},yld:1.0,fdcC:'170567',fdcR:'170567',hc:false},
+  {key:'walnuts',      name:'Walnuts',        cat:'Fat',cooked:{p:15.0,c:14.0,f:65.0},raw:{p:15.0,c:14.0,f:65.0},yld:1.0,fdcC:'170187',fdcR:'170187',hc:false},
+  {key:'cashews',      name:'Cashews',        cat:'Fat',cooked:{p:18.0,c:30.0,f:44.0},raw:{p:18.0,c:30.0,f:44.0},yld:1.0,fdcC:'170162',fdcR:'170162',hc:false},
+];
+
+const PCATS=['Chicken','Ground Beef','Fish','Pork','Other'];
+const CCATS=['Rice & Grain','Potato','Legume','Bread','Fruit'];
+const PDB=DB.filter(f=>PCATS.includes(f.cat));
+const CDB=DB.filter(f=>CCATS.includes(f.cat));
+const FDB=DB.filter(f=>f.cat==='Fat');
+
+function usdaUrl(id){return `https://fdc.nal.usda.gov/food-details/${id}/nutrients`;}
+
+let selP=null,selC=null,selF=null,cookSt={},blurT={},fatOpen=false,lastRes=null;
+
+function pool(t){return t==='protein'?PDB:t==='carb'?CDB:FDB;}
+function ddEl(t){return document.getElementById(t==='protein'?'pdd':t==='carb'?'cdd':'fdd');}
+function inEl(t){return document.getElementById(t==='protein'?'pi':t==='carb'?'ci':'fi');}
+
+function onSearch(el,t){
+  const q=el.value.trim().toLowerCase();
+  const dd=ddEl(t);
+  const hits=q?pool(t).filter(f=>f.name.toLowerCase().includes(q)||f.cat.toLowerCase().includes(q)):null;
+  hits?renderHits(dd,hits,q,t):renderAll(dd,pool(t),t);
+  dd.classList.add('open');
+}
+
+function onFocus(t){
+  clearTimeout(blurT[t]);
+  const q=inEl(t).value.trim().toLowerCase();
+  const dd=ddEl(t);
+  const hits=q?pool(t).filter(f=>f.name.toLowerCase().includes(q)||f.cat.toLowerCase().includes(q)):null;
+  hits?renderHits(dd,hits,q,t):renderAll(dd,pool(t),t);
+  dd.classList.add('open');
+}
+
+function onBlur(t){blurT[t]=setTimeout(()=>ddEl(t).classList.remove('open'),200);}
+
+function renderAll(dd,p,t){
+  const g={};
+  p.forEach(f=>{(g[f.cat]=g[f.cat]||[]).push(f);});
+  dd.innerHTML=Object.entries(g).map(([cat,foods])=>
+    `<div class="ddg">${cat}</div>`+foods.map(f=>iHTML(f,'',t)).join('')
+  ).join('');
+}
+
+function renderHits(dd,hits,q,t){
+  dd.innerHTML=hits.length?hits.map(f=>iHTML(f,q,t)).join(''):`<div class="ddempty">No results for "${q}"</div>`;
+}
+
+function iHTML(f,q,t){
+  let nm=f.name;
+  if(q){const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');nm=nm.replace(re,'<em>$1</em>');}
+  const m=f.cooked;
+  return `<div class="ddi" onmousedown="pick('${f.key}','${t}')">
+    <span class="fn">${nm}</span>
+    <div class="dr">
+      <span class="dm">${m.p}p · ${m.c}c · ${m.f}f<br><span style="font-size:9px">per 100g</span></span>
+      <a class="ul" href="${usdaUrl(f.fdcC)}" target="_blank" rel="noopener" onmousedown="event.stopPropagation()">USDA ↗</a>
+    </div>
+  </div>`;
+}
+
+function pick(key,t){
+  const food=DB.find(f=>f.key===key);
+  if(!food) return;
+  cookSt[key]=true;
+  inEl(t).value=food.name;
+  ddEl(t).classList.remove('open');
+  const m=food.cooked;
+  const pre=t==='protein'?'p':t==='carb'?'c':'f';
+  document.getElementById(pre+'cn').textContent=food.name;
+  document.getElementById(pre+'cm').textContent=`${m.p}p · ${m.c}c · ${m.f}f / 100g`;
+  document.getElementById(pre+'cu').href=usdaUrl(food.fdcC);
+  document.getElementById(pre+'chip').classList.add('show');
+  if(t==='protein'){selP=food;document.getElementById('ep').textContent='';showStep(2);}
+  else if(t==='carb'){selC=food;document.getElementById('ec').textContent='';showStep(3);}
+  else{selF=food;document.getElementById('fat-sub').textContent='Active: '+food.name;}
+}
+
+function clearSel(t){
+  const pre=t==='protein'?'p':t==='carb'?'c':'f';
+  document.getElementById(pre+'chip').classList.remove('show');
+  inEl(t).value='';
+  if(t==='protein'){selP=null;['step2','step3','results'].forEach(id=>document.getElementById(id).style.display='none');updateDots(1);}
+  else if(t==='carb'){selC=null;['step3','results'].forEach(id=>document.getElementById(id).style.display='none');updateDots(2);}
+  else{selF=null;document.getElementById('fat-sub').textContent='Enables 3-food solver — better fat accuracy';}
+}
+
+function toggleFat(){
+  fatOpen=!fatOpen;
+  document.getElementById('fat-search').classList.toggle('open',fatOpen);
+  document.getElementById('fat-btn').textContent=fatOpen?'− Remove':'+ Add';
+  if(!fatOpen) clearSel('fat');
+}
+
+function showStep(n){document.getElementById('step'+n).style.display='block';updateDots(n);setTimeout(()=>document.getElementById('step'+n).scrollIntoView({behavior:'smooth',block:'nearest'}),60);}
+function updateDots(a){for(let i=1;i<=3;i++){const d=document.getElementById('dot'+i);d.className='dot';if(i<a)d.classList.add('done');else if(i===a)d.classList.add('active');}}
+function getMac(food){return cookSt[food.key]===false?food.raw:food.cooked;}
+
+function solve(){
+  const pT=parseFloat(document.getElementById('tp').value);
+  const cT=parseFloat(document.getElementById('tc').value);
+  const fT=parseFloat(document.getElementById('tf').value);
+  document.getElementById('em').textContent='';
+  if(!selP){document.getElementById('ep').textContent='⚠ Select a protein first';return;}
+  if(!selC){document.getElementById('ec').textContent='⚠ Select a carb first';return;}
+  if(isNaN(pT)||isNaN(cT)||isNaN(fT)||pT<0||cT<0||fT<0){document.getElementById('em').textContent='⚠ Enter valid targets';return;}
+  const foods=selF?[selP,selC,selF]:[selP,selC];
+  const mac=foods.map(f=>getMac(f));
+  const grams=foods.length===2?s2(mac[0],mac[1],[pT,cT,fT]):s3(mac[0],mac[1],mac[2],[pT,cT,fT]);
+  lastRes={foods,grams,pT,cT,fT};
+  display(foods,grams,pT,cT,fT);
+}
+
+function s2(f1,f2,b){
+  const MIN=50,MAX=900;
+  const a11=(f1.p**2+f1.c**2+f1.f**2)/10000;
+  const a12=(f1.p*f2.p+f1.c*f2.c+f1.f*f2.f)/10000;
+  const a22=(f2.p**2+f2.c**2+f2.f**2)/10000;
+  const b1=(f1.p*b[0]+f1.c*b[1]+f1.f*b[2])/100;
+  const b2=(f2.p*b[0]+f2.c*b[1]+f2.f*b[2])/100;
+  let g1=0,g2=0,fx1=false,fx2=false;
+  for(let i=0;i<20;i++){
+    if(fx1&&fx2)break;
+    if(!fx1&&!fx2){const det=a11*a22-a12**2;if(Math.abs(det)<1e-10){g1=Math.max(MIN,Math.min(MAX,b1/(a11+1e-9)));g2=Math.max(MIN,Math.min(MAX,b2/(a22+1e-9)));break;}g1=(a22*b1-a12*b2)/det;g2=(a11*b2-a12*b1)/det;}
+    else if(fx1)g2=a22>1e-10?(b2-a12*g1)/a22:MIN;
+    else g1=a11>1e-10?(b1-a12*g2)/a11:MIN;
+    let n1=fx1,n2=fx2;
+    if(!fx1&&(g1<MIN||g1>MAX)){g1=Math.max(MIN,Math.min(MAX,g1));n1=true;}
+    if(!fx2&&(g2<MIN||g2>MAX)){g2=Math.max(MIN,Math.min(MAX,g2));n2=true;}
+    if(n1===fx1&&n2===fx2)break;fx1=n1;fx2=n2;
+  }
+  return[Math.round(g1),Math.round(g2)];
+}
+
+function s3(f1,f2,f3,b){
+  let g=[150,150,20];
+  const bnd=[[50,900],[50,900],[5,300]];
+  for(let i=0;i<3000;i++){
+    const aP=(f1.p*g[0]+f2.p*g[1]+f3.p*g[2])/100;
+    const aC=(f1.c*g[0]+f2.c*g[1]+f3.c*g[2])/100;
+    const aF=(f1.f*g[0]+f2.f*g[1]+f3.f*g[2])/100;
+    const ep=aP-b[0],ec=aC-b[1],ef=aF-b[2];
+    const r=0.8*(1-i/3000);
+    g[0]-=r*(ep*f1.p+ec*f1.c+ef*f1.f)/100;
+    g[1]-=r*(ep*f2.p+ec*f2.c+ef*f2.f)/100;
+    g[2]-=r*(ep*f3.p+ec*f3.c+ef*f3.f)/100;
+    for(let j=0;j<3;j++)g[j]=Math.max(bnd[j][0],Math.min(bnd[j][1],g[j]));
+  }
+  return g.map(v=>Math.round(v));
+}
+
+function display(foods,grams,pT,cT,fT){
+  const cards=document.getElementById('rcards');
+  cards.innerHTML='';
+  foods.forEach((food,i)=>{
+    const isC=cookSt[food.key]!==false;
+    const m=getMac(food);
+    const g=grams[i];
+    const fP=(m.p*g/100).toFixed(1),fC=(m.c*g/100).toFixed(1),fF=(m.f*g/100).toFixed(1);
+    const note=food.hc?(isC?`≈ ${Math.round(g/food.yld)}g raw`:`≈ ${Math.round(g*food.yld)}g cooked`):'';
+    const togHTML=food.hc?`
+      <div class="trow">
+        <span class="tlbl">Weighing:</span>
+        <label class="toggle"><input type="checkbox" id="tog-${food.key}" ${isC?'checked':''} onchange="togCook('${food.key}',${i})"><span class="tslider"></span></label>
+        <span class="tmode" id="tmode-${food.key}">${isC?'Cooked':'Raw'}</span>
+      </div>
+      <div class="tnote" id="tnote-${food.key}">${note}</div>`:'';
+    cards.innerHTML+=`
+      <div class="rc">
+        <div class="rch">
+          <div class="rcn">${food.name}</div>
+          <a class="rcu" href="${usdaUrl(isC?food.fdcC:food.fdcR)}" target="_blank" rel="noopener" id="ulink-${food.key}">USDA ↗</a>
+        </div>
+        <div class="rcg" id="rcg-${food.key}">${g}<span>g ${isC?'cooked':'raw'}</span></div>
+        <div class="rcm" id="rcm-${food.key}">
+          <span class="mp">${fP}g protein</span>
+          <span class="mc">${fC}g carbs</span>
+          <span class="mf2">${fF}g fat</span>
+        </div>${togHTML}
+      </div>`;
+  });
+  let aP=0,aC=0,aF=0;
+  foods.forEach((food,i)=>{const m=getMac(food);aP+=m.p*grams[i]/100;aC+=m.c*grams[i]/100;aF+=m.f*grams[i]/100;});
+  const cals=Math.round(aP*4+aC*4+aF*9);
+  const fmt=v=>v.toFixed(1)+'g';
+  const badge=gap=>`<span class="badge ${Math.abs(gap)>10?'bad':'ok'}">${gap>=0?'+':''}${gap.toFixed(1)}g</span>`;
+  const gP=aP-pT,gC=aC-cT,gF=aF-fT;
+  document.getElementById('spt').textContent=pT+'g';document.getElementById('spa').textContent=fmt(aP);document.getElementById('spg').innerHTML=badge(gP);
+  document.getElementById('sct').textContent=cT+'g';document.getElementById('sca').textContent=fmt(aC);document.getElementById('scg').innerHTML=badge(gC);
+  document.getElementById('sft').textContent=fT+'g';document.getElementById('sfa').textContent=fmt(aF);document.getElementById('sfg').innerHTML=badge(gF);
+  document.getElementById('tcal').textContent=cals+' kcal';
+  const big=[];
+  if(Math.abs(gP)>10)big.push('protein');
+  if(Math.abs(gC)>10)big.push('carbs');
+  if(Math.abs(gF)>10)big.push('fat');
+  const warn=document.getElementById('warn');
+  if(big.length){warn.style.display='block';warn.textContent=`⚠ Gap >10g on ${big.join(', ')}. ${!selF?'Try adding a fat source for better fat accuracy.':''}`;}
+  else warn.style.display='none';
+  document.getElementById('results').style.display='block';
+  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),60);
+}
+
+function togCook(key,idx){
+  const isC=document.getElementById('tog-'+key).checked;
+  cookSt[key]=isC;
+  const food=DB.find(f=>f.key===key);
+  const g=lastRes.grams[idx];
+  const m=getMac(food);
+  document.getElementById('tmode-'+key).textContent=isC?'Cooked':'Raw';
+  document.getElementById('rcg-'+key).innerHTML=`${g}<span>g ${isC?'cooked':'raw'}</span>`;
+  document.getElementById('tnote-'+key).textContent=isC?`≈ ${Math.round(g/food.yld)}g raw`:`≈ ${Math.round(g*food.yld)}g cooked`;
+  document.getElementById('rcm-'+key).innerHTML=`<span class="mp">${(m.p*g/100).toFixed(1)}g protein</span><span class="mc">${(m.c*g/100).toFixed(1)}g carbs</span><span class="mf2">${(m.f*g/100).toFixed(1)}g fat</span>`;
+  document.getElementById('ulink-'+key).href=usdaUrl(isC?food.fdcC:food.fdcR);
+  if(lastRes&&!isNaN(lastRes.pT))solve();
+}
+
+function reset(){
+  selP=null;selC=null;selF=null;cookSt={};lastRes=null;fatOpen=false;
+  ['pi','ci','fi'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pchip','cchip','fchip'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  ['step2','step3','results'].forEach(id=>document.getElementById(id).style.display='none');
+  ['tp','tc','tf'].forEach(id=>document.getElementById(id).value='');
+  ['ep','ec','em'].forEach(id=>document.getElementById(id).textContent='');
+  document.getElementById('fat-search').classList.remove('open');
+  document.getElementById('fat-btn').textContent='+ Add';
+  document.getElementById('fat-sub').textContent='Enables 3-food solver — better fat accuracy';
+  updateDots(1);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
