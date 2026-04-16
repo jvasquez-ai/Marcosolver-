@@ -2,191 +2,452 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MacroSolver</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body { background: #fff; color: #111; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; padding-bottom: 60px; }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{background:#f7f7f5;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding-bottom:80px}
 
-header { padding: 20px 16px 14px; border-bottom: 2px solid #111; display: flex; align-items: baseline; gap: 10px; }
-header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
-header .ver { font-size: 10px; color: #888; letter-spacing: 2px; text-transform: uppercase; }
+/* ── HEADER ─────────────────────────────────────────── */
+.hdr{
+  background:#fff;
+  padding:14px 16px 12px;
+  border-bottom:1px solid #e8e8e8;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.hdr-left{display:flex;align-items:baseline;gap:8px}
+.hdr h1{font-size:20px;font-weight:900;letter-spacing:-0.5px;color:#111}
+.hdr .ver{font-size:9px;color:#bbb;letter-spacing:2px;text-transform:uppercase}
+.hdr-steps{display:flex;gap:6px;align-items:center}
+.hdr-step{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;
+  background:#f0f0f0;color:#bbb;
+  transition:all .25s;
+}
+.hdr-step.active{background:#111;color:#fff}
+.hdr-step.done{background:#e8f5e9;color:#2e7d32}
+.hdr-step.done::after{content:'✓'}
+.hdr-step.done span{display:none}
 
-.prog { display: flex; gap: 4px; padding: 12px 16px 0; }
-.dot { height: 4px; flex: 1; background: #e0e0e0; border-radius: 2px; transition: background .3s; }
-.dot.active { background: #111; }
-.dot.done { background: #999; }
+/* ── LAYOUT ─────────────────────────────────────────── */
+.wrap{padding:0 16px}
 
-.wrap { padding: 0 16px; }
-.lbl { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; margin: 20px 0 10px; display: block; }
-.divider { height: 1px; background: #e0e0e0; margin: 20px 0; }
-.err { color: #c00; font-size: 12px; margin-top: 6px; min-height: 16px; }
+/* ── STEP CARDS ─────────────────────────────────────── */
+.scard{
+  background:#fff;border-radius:16px;
+  padding:16px;margin-top:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+.scard-hdr{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.scard-num{
+  width:26px;height:26px;border-radius:50%;
+  background:#111;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;flex-shrink:0;
+}
+.scard-title{font-size:15px;font-weight:700;color:#111}
+.scard-sub{font-size:12px;color:#888;margin-top:1px}
 
-/* SEARCH */
-.sw { position: relative; z-index: 10; }
-.sinput { width: 100%; background: #f5f5f5; border: 2px solid #ddd; border-radius: 10px; color: #111; font-size: 15px; padding: 13px 14px; outline: none; transition: border-color .2s; font-family: inherit; }
-.sinput:focus { border-color: #111; background: #fff; }
-.sinput::placeholder { color: #aaa; }
+/* ── SEARCH ─────────────────────────────────────────── */
+.sw{position:relative;z-index:20}
+.sinput{
+  width:100%;background:#f5f5f3;
+  border:2px solid transparent;
+  border-radius:12px;color:#111;
+  font-size:16px;padding:13px 16px 13px 42px;
+  outline:none;transition:all .2s;
+  font-family:inherit;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:14px center;
+}
+.sinput:focus{border-color:#111;background-color:#fff}
+.sinput::placeholder{color:#bbb}
 
-/* DROPDOWN */
-.dd { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 2px solid #111; border-radius: 10px; overflow: hidden; z-index: 9999; max-height: 320px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
-.dd.open { display: block; }
-.ddg { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; padding: 8px 14px 5px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; }
-.ddi { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; gap: 8px; background: #fff; }
-.ddi:last-child { border-bottom: none; }
-.ddi:active { background: #f0f0f0; }
-.ddi .fn { font-size: 14px; color: #111; flex: 1; }
-.ddi .fn em { font-style: normal; font-weight: 700; background: #fff176; padding: 0 2px; border-radius: 2px; }
-.ddi .dr { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.ddi .dm { font-size: 10px; color: #888; text-align: right; line-height: 1.5; }
-.ddi .ul { font-size: 9px; color: #666; text-decoration: none; border: 1px solid #ccc; border-radius: 4px; padding: 3px 7px; white-space: nowrap; background: #f9f9f9; }
-.ddempty { padding: 16px; font-size: 13px; color: #888; text-align: center; }
+/* ── DROPDOWN ───────────────────────────────────────── */
+.dd{
+  display:none;position:absolute;
+  top:calc(100% + 6px);left:0;right:0;
+  background:#fff;border-radius:14px;
+  border:1.5px solid #e8e8e8;
+  overflow:hidden;z-index:9999;
+  max-height:280px;overflow-y:auto;
+  box-shadow:0 8px 30px rgba(0,0,0,0.12);
+}
+.dd.open{display:block}
+.ddg{
+  font-size:9px;font-weight:800;letter-spacing:2px;
+  text-transform:uppercase;color:#bbb;
+  padding:10px 16px 6px;background:#fafafa;
+  border-bottom:1px solid #f0f0f0;
+  position:sticky;top:0;
+}
+.ddi{
+  display:flex;align-items:center;
+  padding:13px 16px;cursor:pointer;
+  border-bottom:1px solid #f7f7f5;gap:10px;
+}
+.ddi:last-child{border-bottom:none}
+.ddi:active{background:#f5f5f3}
+.ddi-left{flex:1;min-width:0}
+.ddi .fn{font-size:14px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ddi .fn em{font-style:normal;background:#fff9c4;border-radius:2px;padding:0 1px}
+.ddi .dm{font-size:11px;color:#aaa;margin-top:2px}
+.ddi .ul{
+  font-size:10px;color:#aaa;text-decoration:none;
+  border:1px solid #e8e8e8;border-radius:6px;
+  padding:4px 8px;white-space:nowrap;flex-shrink:0;
+  background:#fafafa;
+}
+.ddempty{padding:20px;font-size:13px;color:#aaa;text-align:center}
 
-/* CHIP */
-.chip { display: none; align-items: center; gap: 8px; background: #f0f9e8; border: 2px solid #4caf50; border-radius: 8px; padding: 8px 12px; margin-top: 10px; }
-.chip.show { display: flex; }
-.chip .cn { flex: 1; font-size: 13px; font-weight: 700; color: #1b5e20; }
-.chip .cm { font-size: 11px; color: #555; }
-.chip .cu { font-size: 10px; color: #555; text-decoration: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 6px; background: #fff; }
-.chip .cx { color: #999; font-size: 20px; cursor: pointer; line-height: 1; padding: 0 2px; }
+/* ── SELECTED CHIP ──────────────────────────────────── */
+.chip{
+  display:none;align-items:center;gap:8px;
+  background:#f0faf0;border:1.5px solid #81c784;
+  border-radius:10px;padding:10px 12px;margin-top:10px;
+}
+.chip.show{display:flex}
+.chip-icon{font-size:16px;flex-shrink:0}
+.chip-info{flex:1;min-width:0}
+.chip .cn{font-size:13px;font-weight:700;color:#1b5e20;display:block}
+.chip .cm{font-size:11px;color:#555;margin-top:1px;display:block}
+.chip-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.chip .cu{
+  font-size:10px;color:#666;text-decoration:none;
+  border:1px solid #c8e6c9;border-radius:6px;
+  padding:3px 7px;background:#fff;white-space:nowrap;
+}
+.chip .cx{
+  width:26px;height:26px;border-radius:50%;
+  background:#f5f5f5;color:#999;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;flex-shrink:0;
+}
 
-/* MACRO INPUTS */
-.mrow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.mf { background: #f5f5f5; border: 2px solid #ddd; border-radius: 10px; padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 4px; }
-.mf:focus-within { border-color: #111; background: #fff; }
-.mf label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-.mf.p label { color: #1565c0; }
-.mf.c label { color: #e65100; }
-.mf.f label { color: #6a1b9a; }
-.mf input { background: none; border: none; outline: none; color: #111; font-size: 26px; font-weight: 800; width: 100%; -moz-appearance: textfield; font-family: inherit; }
-.mf input::-webkit-outer-spin-button, .mf input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.mf .unit { font-size: 10px; color: #888; }
+.err{color:#d32f2f;font-size:12px;margin-top:8px;min-height:16px;padding-left:2px}
 
-.sbtn { width: 100%; margin-top: 16px; background: #111; border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 17px; cursor: pointer; font-family: inherit; }
-.sbtn:active { background: #333; }
+/* ── FAT SOURCE ─────────────────────────────────────── */
+.fat-card{
+  background:#fff;border-radius:16px;
+  border:1.5px dashed #ddd;
+  padding:14px 16px;margin-top:12px;
+  transition:border-color .2s;
+}
+.fat-card.has-fat{border-style:solid;border-color:#ffb74d}
+.fat-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fat-hdr-left{display:flex;align-items:center;gap:10px}
+.fat-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:#fff8e1;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0;
+}
+.fat-title{font-size:14px;font-weight:700;color:#e65100}
+.fat-sub{font-size:11px;color:#aaa;margin-top:1px}
+.fat-btn{
+  background:#fff3e0;border:1.5px solid #ffcc80;
+  border-radius:10px;color:#e65100;
+  font-size:13px;font-weight:700;
+  padding:8px 14px;cursor:pointer;
+  white-space:nowrap;font-family:inherit;
+  flex-shrink:0;transition:all .15s;
+}
+.fat-btn:active{background:#ffe0b2}
+.fat-search{display:none;margin-top:12px}
+.fat-search.open{display:block}
 
-/* FAT */
-.fat-box { background: #fff8f0; border: 2px solid #ffcc80; border-radius: 10px; padding: 14px; }
-.fat-hdr { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.fat-title { font-size: 13px; font-weight: 700; color: #bf360c; }
-.fat-sub { font-size: 11px; color: #888; margin-top: 2px; }
-.fat-btn { background: #bf360c; border: none; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 700; padding: 8px 14px; cursor: pointer; white-space: nowrap; font-family: inherit; flex-shrink: 0; }
-.fat-search { display: none; margin-top: 12px; }
-.fat-search.open { display: block; }
+/* ── MACRO INPUTS ───────────────────────────────────── */
+.macro-lbl{
+  font-size:11px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:#888;
+  margin:0 0 10px;display:block;
+}
+.mrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mf{
+  background:#f5f5f3;border:2px solid transparent;
+  border-radius:14px;padding:14px 12px 10px;
+  display:flex;flex-direction:column;gap:4px;
+  transition:all .2s;
+}
+.mf:focus-within{background:#fff;border-color:#111}
+.mf label{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
+.mf.p label{color:#1565c0}
+.mf.c label{color:#e65100}
+.mf.f label{color:#6a1b9a}
+.mf input{
+  background:none;border:none;outline:none;
+  color:#111;font-size:30px;font-weight:800;
+  width:100%;-moz-appearance:textfield;
+  font-family:inherit;line-height:1;
+}
+.mf input::-webkit-outer-spin-button,
+.mf input::-webkit-inner-spin-button{-webkit-appearance:none}
+.mf .unit{font-size:10px;color:#bbb;font-weight:600}
 
-/* RESULTS */
-#results { display: none; }
-.rc { background: #fafafa; border: 2px solid #e0e0e0; border-radius: 10px; padding: 16px; margin-bottom: 10px; }
-.rch { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; gap: 8px; }
-.rcn { font-size: 18px; font-weight: 800; color: #111; }
-.rcu { font-size: 10px; color: #666; text-decoration: none; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; white-space: nowrap; background: #fff; flex-shrink: 0; margin-top: 4px; }
-.rcg { font-size: 52px; font-weight: 800; color: #111; line-height: 1; margin: 6px 0 6px; }
-.rcg span { font-size: 16px; font-weight: 400; color: #888; }
-.rcm { display: flex; gap: 12px; font-size: 13px; flex-wrap: wrap; margin-bottom: 8px; }
-.rcm .mp { color: #1565c0; font-weight: 700; }
-.rcm .mc { color: #e65100; font-weight: 700; }
-.rcm .mf2 { color: #6a1b9a; font-weight: 700; }
+/* ── SOLVE BUTTON ───────────────────────────────────── */
+.sbtn{
+  width:100%;margin-top:14px;
+  background:#111;border:none;border-radius:14px;
+  color:#fff;font-size:17px;font-weight:800;
+  letter-spacing:0.5px;text-transform:uppercase;
+  padding:18px;cursor:pointer;font-family:inherit;
+  transition:transform .1s,background .15s;
+  position:relative;overflow:hidden;
+}
+.sbtn:active{transform:scale(.98);background:#222}
+.sbtn.loading{opacity:.7;pointer-events:none}
+
+/* ── RESULTS ────────────────────────────────────────── */
+#results{display:none}
+.results-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:16px 0 10px;
+}
+.results-title{font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#888}
+.results-edit{
+  font-size:12px;color:#666;text-decoration:none;
+  border:1px solid #ddd;border-radius:8px;padding:5px 10px;
+  background:#fff;cursor:pointer;font-family:inherit;
+}
+
+/* RESULT CARDS */
+.rc{
+  background:#fff;border-radius:16px;
+  padding:16px;margin-bottom:10px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+.rc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.rcn{font-size:14px;font-weight:700;color:#555;flex:1}
+.rcu{
+  font-size:10px;color:#aaa;text-decoration:none;
+  border:1px solid #e8e8e8;border-radius:6px;
+  padding:4px 8px;background:#fafafa;white-space:nowrap;flex-shrink:0;
+}
+.rc-grams{
+  font-size:64px;font-weight:900;color:#111;
+  line-height:1;margin:4px 0 2px;letter-spacing:-2px;
+}
+.rc-grams span{font-size:18px;font-weight:500;color:#aaa;letter-spacing:0}
+.rc-macros{
+  display:flex;gap:0;margin-bottom:10px;
+  background:#f7f7f5;border-radius:10px;overflow:hidden;
+}
+.rc-macro{
+  flex:1;padding:8px 6px;text-align:center;
+  border-right:1px solid #efefed;
+}
+.rc-macro:last-child{border-right:none}
+.rc-macro .mv{font-size:14px;font-weight:800;color:#111}
+.rc-macro .mk{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.rc-macro.prot .mk{color:#1565c0}
+.rc-macro.carb .mk{color:#e65100}
+.rc-macro.fatt .mk{color:#6a1b9a}
 
 /* TOGGLE */
-.trow { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding-top: 10px; border-top: 1px solid #e0e0e0; }
-.tlbl { font-size: 12px; color: #555; }
-.toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
-.toggle input { opacity: 0; width: 0; height: 0; }
-.tslider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 24px; transition: .25s; }
-.tslider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .25s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-.toggle input:checked + .tslider { background: #111; }
-.toggle input:checked + .tslider:before { transform: translateX(20px); }
-.tmode { font-size: 12px; font-weight: 700; color: #111; min-width: 52px; }
-.tnote { font-size: 11px; color: #888; font-style: italic; margin-top: 4px; }
+.trow{
+  display:flex;align-items:center;gap:10px;
+  padding-top:10px;border-top:1px solid #f0f0f0;
+}
+.tlbl{font-size:12px;color:#888;flex:1}
+.toggle{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tslider{
+  position:absolute;cursor:pointer;
+  top:0;left:0;right:0;bottom:0;
+  background:#ddd;border-radius:26px;transition:.25s;
+}
+.tslider:before{
+  position:absolute;content:"";
+  height:20px;width:20px;left:3px;bottom:3px;
+  background:#fff;border-radius:50%;transition:.25s;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+.toggle input:checked+.tslider{background:#111}
+.toggle input:checked+.tslider:before{transform:translateX(20px)}
+.tmode{font-size:12px;font-weight:800;color:#111;min-width:52px;text-align:right}
+.tnote{font-size:11px;color:#aaa;margin-top:4px;font-style:italic}
 
 /* SUMMARY */
-.st { border: 2px solid #e0e0e0; border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
-.sr { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #e0e0e0; align-items: center; }
-.sr:last-child { border-bottom: none; }
-.sr.hdr { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; background: #f5f5f5; padding: 9px 14px; }
-.sr .mp { color: #1565c0; font-weight: 700; }
-.sr .mc { color: #e65100; font-weight: 700; }
-.sr .mft { color: #6a1b9a; font-weight: 700; }
-.badge { font-size: 11px; padding: 3px 8px; border-radius: 100px; font-weight: 700; display: inline-block; }
-.badge.ok { background: #e8f5e9; color: #2e7d32; }
-.badge.bad { background: #ffebee; color: #c62828; }
+.sum-card{
+  background:#fff;border-radius:16px;
+  overflow:hidden;margin-bottom:10px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+.sum-row{
+  display:flex;align-items:center;
+  padding:12px 16px;border-bottom:1px solid #f5f5f3;
+}
+.sum-row:last-child{border-bottom:none}
+.sum-row.hdr{background:#f7f7f5;padding:8px 16px}
+.sum-row.hdr span{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#bbb}
+.sum-macro{width:60px;font-size:13px;font-weight:700}
+.sum-macro.p{color:#1565c0}.sum-macro.c{color:#e65100}.sum-macro.f{color:#6a1b9a}
+.sum-vals{flex:1;display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.sum-t{font-size:13px;color:#aaa;min-width:38px;text-align:right}
+.sum-arr{font-size:11px;color:#ddd;margin:0 2px}
+.sum-a{font-size:13px;font-weight:700;color:#111;min-width:38px;text-align:right}
+.badge{
+  font-size:11px;font-weight:800;
+  padding:3px 8px;border-radius:100px;
+  display:inline-block;min-width:52px;text-align:center;
+}
+.badge.ok{background:#e8f5e9;color:#2e7d32}
+.badge.bad{background:#ffebee;color:#c62828}
 
-.warn { background: #fffde7; border: 2px solid #f9a825; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #555; margin-bottom: 12px; line-height: 1.6; }
-.calrow { background: #111; border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.calrow .cl { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #888; }
-.calrow .cv { font-size: 30px; font-weight: 800; color: #fff; }
+/* CALORIES */
+.cal-card{
+  background:#111;border-radius:16px;
+  padding:18px;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.cal-card .cl{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#666}
+.cal-card .cv{font-size:36px;font-weight:900;color:#fff;letter-spacing:-1px}
+.cal-card .cs{font-size:12px;color:#555;margin-top:2px}
 
-.rbtn { width: 100%; background: none; border: 2px solid #ddd; border-radius: 10px; color: #888; font-size: 14px; padding: 14px; cursor: pointer; font-family: inherit; margin-bottom: 20px; }
-.rbtn:active { border-color: #111; color: #111; }
+/* WARN */
+.warn{
+  background:#fffde7;border:1.5px solid #f9a825;
+  border-radius:12px;padding:12px 14px;
+  font-size:13px;color:#555;margin-bottom:10px;
+  line-height:1.6;display:none;
+}
+
+/* RESET */
+.reset-wrap{padding:4px 0 0}
+.rbtn{
+  width:100%;background:none;
+  border:1.5px solid #e8e8e8;border-radius:12px;
+  color:#bbb;font-size:14px;padding:14px;
+  cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-bottom:20px;transition:all .15s;
+}
+.rbtn:active{border-color:#111;color:#111}
+
+/* CONFIRM RESET */
+.reset-confirm{
+  display:none;
+  background:#fff;border-radius:16px;
+  padding:20px;text-align:center;
+  box-shadow:0 2px 20px rgba(0,0,0,0.1);
+  margin-bottom:20px;
+}
+.reset-confirm p{font-size:14px;color:#555;margin-bottom:16px}
+.reset-confirm-btns{display:flex;gap:10px}
+.rc-yes{flex:1;background:#111;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;font-family:inherit}
+.rc-no{flex:1;background:#f5f5f3;border:none;border-radius:10px;color:#555;font-size:14px;font-weight:700;padding:13px;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>MacroSolver</h1>
-  <span class="ver">v4.0</span>
-</header>
-
-<div class="prog">
-  <div class="dot active" id="dot1"></div>
-  <div class="dot" id="dot2"></div>
-  <div class="dot" id="dot3"></div>
+<!-- STICKY HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>MacroSolver</h1>
+    <span class="ver">v5</span>
+  </div>
+  <div class="hdr-steps">
+    <div class="hdr-step active" id="dot1"><span>1</span></div>
+    <div class="hdr-step" id="dot2"><span>2</span></div>
+    <div class="hdr-step" id="dot3"><span>3</span></div>
+  </div>
 </div>
 
 <div class="wrap">
 
+  <!-- STEP 1: PROTEIN -->
   <div id="step1">
-    <span class="lbl">Step 1 — Protein</span>
-    <div class="sw">
-      <input class="sinput" id="pi" type="text" placeholder="Type: chicken, salmon, 80/20, turkey…"
-        autocomplete="off"
-        oninput="onSearch(this,'protein')"
-        onfocus="onFocus('protein')"
-        onblur="onBlur('protein')">
-      <div class="dd" id="pdd"></div>
-    </div>
-    <div class="chip" id="pchip">
-      <span>✓</span><span class="cn" id="pcn"></span>
-      <span class="cm" id="pcm"></span>
-      <a class="cu" id="pcu" href="#" target="_blank" rel="noopener">USDA ↗</a>
-      <span class="cx" onclick="clearSel('protein')">×</span>
-    </div>
-    <div class="err" id="ep"></div>
-  </div>
-
-  <div id="step2" style="display:none">
-    <div class="divider"></div>
-    <span class="lbl">Step 2 — Carb</span>
-    <div class="sw">
-      <input class="sinput" id="ci" type="text" placeholder="Type: white rice, sweet potato, pasta…"
-        autocomplete="off"
-        oninput="onSearch(this,'carb')"
-        onfocus="onFocus('carb')"
-        onblur="onBlur('carb')">
-      <div class="dd" id="cdd"></div>
-    </div>
-    <div class="chip" id="cchip">
-      <span>✓</span><span class="cn" id="ccn"></span>
-      <span class="cm" id="ccm"></span>
-      <a class="cu" id="ccu" href="#" target="_blank" rel="noopener">USDA ↗</a>
-      <span class="cx" onclick="clearSel('carb')">×</span>
-    </div>
-    <div class="err" id="ec"></div>
-  </div>
-
-  <div id="step3" style="display:none">
-    <div class="divider"></div>
-    <div class="fat-box">
-      <div class="fat-hdr">
+    <div class="scard">
+      <div class="scard-hdr">
+        <div class="scard-num">1</div>
         <div>
-          <div class="fat-title">+ Fat source <span style="font-weight:400;font-size:11px">(optional)</span></div>
-          <div class="fat-sub" id="fat-sub">Enables 3-food solver — better fat accuracy</div>
+          <div class="scard-title">Choose your protein</div>
+          <div class="scard-sub">Chicken, beef, fish, pork…</div>
+        </div>
+      </div>
+      <div class="sw">
+        <input class="sinput" id="pi" type="text"
+          placeholder="Search: chicken breast, 93/7, salmon…"
+          autocomplete="off"
+          oninput="onSearch(this,'protein')"
+          onfocus="onFocus('protein')"
+          onblur="onBlur('protein')">
+        <div class="dd" id="pdd"></div>
+      </div>
+      <div class="chip" id="pchip">
+        <span class="chip-icon">✓</span>
+        <div class="chip-info">
+          <span class="cn" id="pcn"></span>
+          <span class="cm" id="pcm"></span>
+        </div>
+        <div class="chip-actions">
+          <a class="cu" id="pcu" href="#" target="_blank" rel="noopener">USDA ↗</a>
+          <div class="cx" onclick="clearSel('protein')">×</div>
+        </div>
+      </div>
+      <div class="err" id="ep"></div>
+    </div>
+  </div>
+
+  <!-- STEP 2: CARB -->
+  <div id="step2" style="display:none">
+    <div class="scard">
+      <div class="scard-hdr">
+        <div class="scard-num">2</div>
+        <div>
+          <div class="scard-title">Choose your carb</div>
+          <div class="scard-sub">Rice, potato, pasta, legumes…</div>
+        </div>
+      </div>
+      <div class="sw">
+        <input class="sinput" id="ci" type="text"
+          placeholder="Search: white rice, sweet potato, pasta…"
+          autocomplete="off"
+          oninput="onSearch(this,'carb')"
+          onfocus="onFocus('carb')"
+          onblur="onBlur('carb')">
+        <div class="dd" id="cdd"></div>
+      </div>
+      <div class="chip" id="cchip">
+        <span class="chip-icon">✓</span>
+        <div class="chip-info">
+          <span class="cn" id="ccn"></span>
+          <span class="cm" id="ccm"></span>
+        </div>
+        <div class="chip-actions">
+          <a class="cu" id="ccu" href="#" target="_blank" rel="noopener">USDA ↗</a>
+          <div class="cx" onclick="clearSel('carb')">×</div>
+        </div>
+      </div>
+      <div class="err" id="ec"></div>
+    </div>
+  </div>
+
+  <!-- STEP 3: FAT + MACROS -->
+  <div id="step3" style="display:none">
+
+    <!-- FAT (OPTIONAL) -->
+    <div class="fat-card" id="fat-card">
+      <div class="fat-hdr">
+        <div class="fat-hdr-left">
+          <div class="fat-icon">🫒</div>
+          <div>
+            <div class="fat-title">Add fat source <span style="font-weight:400;font-size:11px;color:#bbb">(optional)</span></div>
+            <div class="fat-sub" id="fat-sub">Enables 3-food solver for better fat accuracy</div>
+          </div>
         </div>
         <button class="fat-btn" id="fat-btn" onclick="toggleFat()">+ Add</button>
       </div>
       <div class="fat-search" id="fat-search">
-        <div class="sw" style="margin-top:10px">
-          <input class="sinput" id="fi" type="text" placeholder="Type: butter, olive oil, avocado…"
+        <div class="sw" style="margin-top:12px">
+          <input class="sinput" id="fi" type="text"
+            placeholder="Search: butter, olive oil, avocado…"
             autocomplete="off"
             oninput="onSearch(this,'fat')"
             onfocus="onFocus('fat')"
@@ -194,43 +455,122 @@ header .ver { font-size: 10px; color: #888; letter-spacing: 2px; text-transform:
           <div class="dd" id="fdd"></div>
         </div>
         <div class="chip" id="fchip">
-          <span>✓</span><span class="cn" id="fcn"></span>
-          <span class="cm" id="fcm"></span>
-          <a class="cu" id="fcu" href="#" target="_blank" rel="noopener">USDA ↗</a>
-          <span class="cx" onclick="clearSel('fat')">×</span>
+          <span class="chip-icon">✓</span>
+          <div class="chip-info">
+            <span class="cn" id="fcn"></span>
+            <span class="cm" id="fcm"></span>
+          </div>
+          <div class="chip-actions">
+            <a class="cu" id="fcu" href="#" target="_blank" rel="noopener">USDA ↗</a>
+            <div class="cx" onclick="clearSel('fat')">×</div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="divider"></div>
-    <span class="lbl">Step 3 — Your macro targets</span>
-    <div class="mrow">
-      <div class="mf p"><label>Protein</label><input type="number" id="tp" placeholder="180" min="0"><div class="unit">grams</div></div>
-      <div class="mf c"><label>Carbs</label>  <input type="number" id="tc" placeholder="200" min="0"><div class="unit">grams</div></div>
-      <div class="mf f"><label>Fat</label>    <input type="number" id="tf" placeholder="60"  min="0"><div class="unit">grams</div></div>
+
+    <!-- MACRO TARGETS -->
+    <div class="scard" style="margin-top:12px">
+      <div class="scard-hdr">
+        <div class="scard-num">3</div>
+        <div>
+          <div class="scard-title">Your macro targets</div>
+          <div class="scard-sub">Enter your daily goals in grams</div>
+        </div>
+      </div>
+      <div class="mrow">
+        <div class="mf p">
+          <label>Protein</label>
+          <input type="number" id="tp" placeholder="180" min="0" inputmode="numeric">
+          <div class="unit">grams</div>
+        </div>
+        <div class="mf c">
+          <label>Carbs</label>
+          <input type="number" id="tc" placeholder="200" min="0" inputmode="numeric">
+          <div class="unit">grams</div>
+        </div>
+        <div class="mf f">
+          <label>Fat</label>
+          <input type="number" id="tf" placeholder="60" min="0" inputmode="numeric">
+          <div class="unit">grams</div>
+        </div>
+      </div>
+      <div class="err" id="em"></div>
+      <button class="sbtn" id="sbtn" onclick="solve()">Calculate Portions →</button>
     </div>
-    <div class="err" id="em"></div>
-    <button class="sbtn" onclick="solve()">SOLVE →</button>
   </div>
 
+  <!-- RESULTS -->
   <div id="results">
-    <div class="divider"></div>
-    <span class="lbl">Your portions</span>
-    <div id="rcards"></div>
-    <div class="warn" id="warn" style="display:none"></div>
-    <div class="st">
-      <div class="sr hdr"><div>Macro</div><div>Target</div><div>Actual</div><div>Gap</div></div>
-      <div class="sr"><div class="mp">Protein</div><div id="spt">—</div><div id="spa">—</div><div id="spg">—</div></div>
-      <div class="sr"><div class="mc">Carbs</div>  <div id="sct">—</div><div id="sca">—</div><div id="scg">—</div></div>
-      <div class="sr"><div class="mft">Fat</div>   <div id="sft">—</div><div id="sfa">—</div><div id="sfg">—</div></div>
+    <div class="results-hdr">
+      <span class="results-title">Your portions</span>
+      <button class="results-edit" onclick="scrollToTop()">✏ Edit</button>
     </div>
-    <div class="calrow">
-      <div class="cl">Est. Calories</div>
+
+    <div id="rcards"></div>
+
+    <div class="warn" id="warn"></div>
+
+    <!-- SUMMARY -->
+    <div class="sum-card">
+      <div class="sum-row hdr">
+        <span style="flex:1">Macro</span>
+        <span style="min-width:38px;text-align:right">Target</span>
+        <span style="width:16px"></span>
+        <span style="min-width:38px;text-align:right">Actual</span>
+        <span style="min-width:60px;text-align:right">Gap</span>
+      </div>
+      <div class="sum-row">
+        <div class="sum-macro p">Protein</div>
+        <div class="sum-vals">
+          <span class="sum-t" id="spt">—</span>
+          <span class="sum-arr">→</span>
+          <span class="sum-a" id="spa">—</span>
+          <span id="spg">—</span>
+        </div>
+      </div>
+      <div class="sum-row">
+        <div class="sum-macro c">Carbs</div>
+        <div class="sum-vals">
+          <span class="sum-t" id="sct">—</span>
+          <span class="sum-arr">→</span>
+          <span class="sum-a" id="sca">—</span>
+          <span id="scg">—</span>
+        </div>
+      </div>
+      <div class="sum-row">
+        <div class="sum-macro f">Fat</div>
+        <div class="sum-vals">
+          <span class="sum-t" id="sft">—</span>
+          <span class="sum-arr">→</span>
+          <span class="sum-a" id="sfa">—</span>
+          <span id="sfg">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALORIES -->
+    <div class="cal-card">
+      <div>
+        <div class="cl">Estimated Calories</div>
+        <div class="cs">Protein×4 + Carbs×4 + Fat×9</div>
+      </div>
       <div class="cv" id="tcal">—</div>
     </div>
-    <button class="rbtn" onclick="reset()">↺ Start Over</button>
+
+    <!-- RESET -->
+    <div class="reset-wrap">
+      <button class="rbtn" onclick="showResetConfirm()">↺ &nbsp;Start Over</button>
+      <div class="reset-confirm" id="reset-confirm">
+        <p>Start over and clear all selections?</p>
+        <div class="reset-confirm-btns">
+          <button class="rc-no" onclick="hideResetConfirm()">Cancel</button>
+          <button class="rc-yes" onclick="reset()">Yes, reset</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-</div>
+</div><!-- /wrap -->
 
 <script>
 const DB=[
@@ -243,12 +583,12 @@ const DB=[
   {key:'beef_8515',name:'Ground Beef 85/15',cat:'Ground Beef',cooked:{p:27.0,c:0.0,f:11.0},raw:{p:18.0,c:0.0,f:15.0},yld:0.72,fdcC:'174030',fdcR:'174031',hc:true},
   {key:'beef_9010',name:'Ground Beef 90/10',cat:'Ground Beef',cooked:{p:26.0,c:0.0,f:11.0},raw:{p:19.0,c:0.0,f:10.0},yld:0.72,fdcC:'174028',fdcR:'174029',hc:true},
   {key:'beef_937', name:'Ground Beef 93/7', cat:'Ground Beef',cooked:{p:26.0,c:0.0,f:7.0}, raw:{p:20.0,c:0.0,f:7.0}, yld:0.73,fdcC:'174026',fdcR:'174027',hc:true},
-  {key:'salmon', name:'Salmon',           cat:'Fish',cooked:{p:25.0,c:0.0,f:13.0},raw:{p:20.0,c:0.0,f:12.0},yld:0.80,fdcC:'175168',fdcR:'175167',hc:true},
-  {key:'tuna',   name:'Tuna (canned)',    cat:'Fish',cooked:{p:26.0,c:0.0,f:1.0}, raw:{p:26.0,c:0.0,f:1.0}, yld:1.00,fdcC:'172006',fdcR:'172006',hc:false},
-  {key:'yellowfin_tuna',name:'Yellowfin Tuna (sushi)',cat:'Fish',cooked:{p:30.0,c:0.0,f:1.0},raw:{p:24.4,c:0.0,f:0.5},yld:0.80,fdcC:'175160',fdcR:'175159',hc:true},
-  {key:'yellowtail',   name:'Yellowtail (sushi)',    cat:'Fish',cooked:{p:30.0,c:0.0,f:7.0},raw:{p:20.6,c:0.0,f:6.0},yld:0.80,fdcC:'174248',fdcR:'175163',hc:true},
-  {key:'tilapia',name:'Tilapia',          cat:'Fish',cooked:{p:26.0,c:0.0,f:2.7}, raw:{p:20.0,c:0.0,f:2.0}, yld:0.82,fdcC:'175177',fdcR:'175176',hc:true},
-  {key:'shrimp', name:'Shrimp',           cat:'Fish',cooked:{p:24.0,c:0.2,f:1.7}, raw:{p:18.0,c:0.2,f:1.2}, yld:0.80,fdcC:'175180',fdcR:'175179',hc:true},
+  {key:'salmon',         name:'Salmon',                cat:'Fish',cooked:{p:25.0,c:0.0,f:13.0},raw:{p:20.0,c:0.0,f:12.0},yld:0.80,fdcC:'175168',fdcR:'175167',hc:true},
+  {key:'tuna',           name:'Tuna (canned)',          cat:'Fish',cooked:{p:26.0,c:0.0,f:1.0}, raw:{p:26.0,c:0.0,f:1.0}, yld:1.00,fdcC:'172006',fdcR:'172006',hc:false},
+  {key:'yellowfin_tuna', name:'Yellowfin Tuna (sushi)', cat:'Fish',cooked:{p:30.0,c:0.0,f:1.0},raw:{p:24.4,c:0.0,f:0.5},yld:0.80,fdcC:'175160',fdcR:'175159',hc:true},
+  {key:'yellowtail',     name:'Yellowtail (sushi)',     cat:'Fish',cooked:{p:30.0,c:0.0,f:7.0},raw:{p:20.6,c:0.0,f:6.0},yld:0.80,fdcC:'174248',fdcR:'175163',hc:true},
+  {key:'tilapia',        name:'Tilapia',                cat:'Fish',cooked:{p:26.0,c:0.0,f:2.7}, raw:{p:20.0,c:0.0,f:2.0}, yld:0.82,fdcC:'175177',fdcR:'175176',hc:true},
+  {key:'shrimp',         name:'Shrimp',                 cat:'Fish',cooked:{p:24.0,c:0.2,f:1.7}, raw:{p:18.0,c:0.2,f:1.2}, yld:0.80,fdcC:'175180',fdcR:'175179',hc:true},
   {key:'pork_tenderloin',name:'Pork Tenderloin',          cat:'Pork',cooked:{p:26.0,c:0.0,f:3.0}, raw:{p:21.0,c:0.0,f:2.5},yld:0.76,fdcC:'167903',fdcR:'167904',hc:true},
   {key:'pork_chop',      name:'Pork Chop (center lean)',  cat:'Pork',cooked:{p:28.0,c:0.0,f:10.0},raw:{p:19.0,c:0.0,f:7.0}, yld:0.77,fdcC:'167905',fdcR:'167906',hc:true},
   {key:'pork_ribs',      name:'Pork Ribs (country-style)',cat:'Pork',cooked:{p:29.0,c:0.0,f:11.0},raw:{p:18.0,c:0.0,f:8.0}, yld:0.72,fdcC:'167879',fdcR:'167880',hc:true},
@@ -263,15 +603,15 @@ const DB=[
   {key:'spaghetti',    name:'Spaghetti (cooked)',    cat:'Rice & Grain',cooked:{p:5.0,c:31.0,f:0.9},raw:{p:12.5,c:74.7,f:1.8},yld:2.2,fdcC:'168936',fdcR:'168935',hc:true},
   {key:'fettuccine',   name:'Fettuccine (cooked)',   cat:'Rice & Grain',cooked:{p:5.1,c:31.0,f:0.9},raw:{p:12.5,c:74.7,f:1.8},yld:2.2,fdcC:'168936',fdcR:'168937',hc:true},
   {key:'macaroni',     name:'Macaroni (cooked)',     cat:'Rice & Grain',cooked:{p:5.0,c:30.6,f:0.6},raw:{p:12.8,c:75.0,f:1.5},yld:2.2,fdcC:'168937',fdcR:'168937',hc:true},
+  {key:'couscous',     name:'Couscous (cooked)',     cat:'Rice & Grain',cooked:{p:3.8,c:23.2,f:0.2},raw:{p:12.8,c:77.4,f:0.6},yld:3.0,fdcC:'169700',fdcR:'169699',hc:true},
   {key:'sweet_potato', name:'Sweet Potato',         cat:'Potato',cooked:{p:1.6,c:20.0,f:0.1},raw:{p:1.6,c:20.0,f:0.1},yld:0.97,fdcC:'168482',fdcR:'168482',hc:true},
   {key:'russet',       name:'Russet Potato (baked)',cat:'Potato',cooked:{p:2.5,c:17.0,f:0.1},raw:{p:2.0,c:17.0,f:0.1},yld:0.97,fdcC:'170438',fdcR:'170032',hc:true},
   {key:'yukon',        name:'Yukon Gold Potato',    cat:'Potato',cooked:{p:2.0,c:17.0,f:0.1},raw:{p:2.0,c:17.0,f:0.1},yld:0.97,fdcC:'170032',fdcR:'170032',hc:true},
   {key:'black_beans',  name:'Black Beans',          cat:'Legume',cooked:{p:8.9,c:23.0,f:0.4},raw:{p:21.6,c:62.0,f:0.9},yld:2.3,fdcC:'173735',fdcR:'173744',hc:true},
   {key:'lentils',      name:'Lentils',              cat:'Legume',cooked:{p:9.0,c:20.0,f:0.4},raw:{p:25.0,c:60.0,f:1.1},yld:2.5,fdcC:'172421',fdcR:'172420',hc:true},
   {key:'ezekiel',      name:'Ezekiel Bread',        cat:'Bread', cooked:{p:9.0,c:34.0,f:1.7},raw:{p:9.0,c:34.0,f:1.7},yld:1.0,fdcC:'370752',fdcR:'370752',hc:false},
-  {key:'couscous',     name:'Couscous (cooked)',     cat:'Rice & Grain',cooked:{p:3.8,c:23.2,f:0.2},raw:{p:12.8,c:77.4,f:0.6},yld:3.0,fdcC:'169700',fdcR:'169699',hc:true},
-  {key:'white_bread',  name:'White Bread',           cat:'Bread', cooked:{p:8.0,c:49.0,f:3.2},raw:{p:8.0,c:49.0,f:3.2},yld:1.0,fdcC:'353827',fdcR:'353827',hc:false},
-  {key:'eggplant',     name:'Eggplant (cooked)',     cat:'Veggie', cooked:{p:0.8,c:8.6,f:0.2},raw:{p:1.0,c:5.9,f:0.2},yld:0.85,fdcC:'169227',fdcR:'169228',hc:true},
+  {key:'white_bread',  name:'White Bread',          cat:'Bread', cooked:{p:8.0,c:49.0,f:3.2},raw:{p:8.0,c:49.0,f:3.2},yld:1.0,fdcC:'353827',fdcR:'353827',hc:false},
+  {key:'eggplant',     name:'Eggplant (cooked)',    cat:'Veggie',cooked:{p:0.8,c:8.6,f:0.2},raw:{p:1.0,c:5.9,f:0.2},yld:0.85,fdcC:'169227',fdcR:'169228',hc:true},
   {key:'banana',       name:'Banana',               cat:'Fruit', cooked:{p:1.1,c:23.0,f:0.3},raw:{p:1.1,c:23.0,f:0.3},yld:1.0,fdcC:'173944',fdcR:'173944',hc:false},
   {key:'butter',       name:'Butter',        cat:'Fat',cooked:{p:0.9,c:0.1,f:81.0}, raw:{p:0.9,c:0.1,f:81.0}, yld:1.0,fdcC:'173410',fdcR:'173410',hc:false},
   {key:'ghee',         name:'Ghee',          cat:'Fat',cooked:{p:0.3,c:0.0,f:99.5}, raw:{p:0.3,c:0.0,f:99.5}, yld:1.0,fdcC:'171314',fdcR:'171314',hc:false},
@@ -335,11 +675,11 @@ function iHTML(f,q,t){
   if(q){const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');nm=nm.replace(re,'<em>$1</em>');}
   const m=f.cooked;
   return `<div class="ddi" onmousedown="pick('${f.key}','${t}')">
-    <span class="fn">${nm}</span>
-    <div class="dr">
-      <span class="dm">${m.p}p · ${m.c}c · ${m.f}f<br><span style="font-size:9px">per 100g</span></span>
-      <a class="ul" href="${usdaUrl(f.fdcC)}" target="_blank" rel="noopener" onmousedown="event.stopPropagation()">USDA ↗</a>
+    <div class="ddi-left">
+      <div class="fn">${nm}</div>
+      <div class="dm">${m.p}g protein · ${m.c}g carbs · ${m.f}g fat &nbsp;<span style="color:#ddd">|</span>&nbsp; per 100g</div>
     </div>
+    <a class="ul" href="${usdaUrl(f.fdcC)}" target="_blank" rel="noopener" onmousedown="event.stopPropagation()">USDA ↗</a>
   </div>`;
 }
 
@@ -352,12 +692,12 @@ function pick(key,t){
   const m=food.cooked;
   const pre=t==='protein'?'p':t==='carb'?'c':'f';
   document.getElementById(pre+'cn').textContent=food.name;
-  document.getElementById(pre+'cm').textContent=`${m.p}p · ${m.c}c · ${m.f}f / 100g`;
+  document.getElementById(pre+'cm').textContent=`${m.p}g protein · ${m.c}g carbs · ${m.f}g fat / 100g`;
   document.getElementById(pre+'cu').href=usdaUrl(food.fdcC);
   document.getElementById(pre+'chip').classList.add('show');
   if(t==='protein'){selP=food;document.getElementById('ep').textContent='';showStep(2);}
   else if(t==='carb'){selC=food;document.getElementById('ec').textContent='';showStep(3);}
-  else{selF=food;document.getElementById('fat-sub').textContent='Active: '+food.name;}
+  else{selF=food;document.getElementById('fat-sub').textContent='Active: '+food.name;document.getElementById('fat-card').classList.add('has-fat');}
 }
 
 function clearSel(t){
@@ -366,18 +706,32 @@ function clearSel(t){
   inEl(t).value='';
   if(t==='protein'){selP=null;['step2','step3','results'].forEach(id=>document.getElementById(id).style.display='none');updateDots(1);}
   else if(t==='carb'){selC=null;['step3','results'].forEach(id=>document.getElementById(id).style.display='none');updateDots(2);}
-  else{selF=null;document.getElementById('fat-sub').textContent='Enables 3-food solver — better fat accuracy';}
+  else{selF=null;document.getElementById('fat-sub').textContent='Enables 3-food solver — better fat accuracy';document.getElementById('fat-card').classList.remove('has-fat');}
 }
 
 function toggleFat(){
   fatOpen=!fatOpen;
   document.getElementById('fat-search').classList.toggle('open',fatOpen);
   document.getElementById('fat-btn').textContent=fatOpen?'− Remove':'+ Add';
-  if(!fatOpen) clearSel('fat');
+  if(!fatOpen){clearSel('fat');}
 }
 
-function showStep(n){document.getElementById('step'+n).style.display='block';updateDots(n);setTimeout(()=>document.getElementById('step'+n).scrollIntoView({behavior:'smooth',block:'nearest'}),60);}
-function updateDots(a){for(let i=1;i<=3;i++){const d=document.getElementById('dot'+i);d.className='dot';if(i<a)d.classList.add('done');else if(i===a)d.classList.add('active');}}
+function showStep(n){
+  document.getElementById('step'+n).style.display='block';
+  updateDots(n);
+  setTimeout(()=>document.getElementById('step'+n).scrollIntoView({behavior:'smooth',block:'nearest'}),60);
+}
+
+function updateDots(a){
+  for(let i=1;i<=3;i++){
+    const d=document.getElementById('dot'+i);
+    d.className='hdr-step';
+    if(i<a){d.classList.add('done');d.innerHTML='';}
+    else if(i===a){d.classList.add('active');d.innerHTML=`<span>${i}</span>`;}
+    else{d.innerHTML=`<span>${i}</span>`;}
+  }
+}
+
 function getMac(food){return cookSt[food.key]===false?food.raw:food.cooked;}
 
 function solve(){
@@ -388,11 +742,18 @@ function solve(){
   if(!selP){document.getElementById('ep').textContent='⚠ Select a protein first';return;}
   if(!selC){document.getElementById('ec').textContent='⚠ Select a carb first';return;}
   if(isNaN(pT)||isNaN(cT)||isNaN(fT)||pT<0||cT<0||fT<0){document.getElementById('em').textContent='⚠ Enter valid targets';return;}
-  const foods=selF?[selP,selC,selF]:[selP,selC];
-  const mac=foods.map(f=>getMac(f));
-  const grams=foods.length===2?s2(mac[0],mac[1],[pT,cT,fT]):s3(mac[0],mac[1],mac[2],[pT,cT,fT]);
-  lastRes={foods,grams,pT,cT,fT};
-  display(foods,grams,pT,cT,fT);
+
+  const btn=document.getElementById('sbtn');
+  btn.classList.add('loading');btn.textContent='Calculating…';
+
+  setTimeout(()=>{
+    const foods=selF?[selP,selC,selF]:[selP,selC];
+    const mac=foods.map(f=>getMac(f));
+    const grams=foods.length===2?s2(mac[0],mac[1],[pT,cT,fT]):s3(mac[0],mac[1],mac[2],[pT,cT,fT]);
+    lastRes={foods,grams,pT,cT,fT};
+    display(foods,grams,pT,cT,fT);
+    btn.classList.remove('loading');btn.textContent='Calculate Portions →';
+  },120);
 }
 
 function s2(f1,f2,b){
@@ -444,44 +805,54 @@ function display(foods,grams,pT,cT,fT){
     const note=food.hc?(isC?`≈ ${Math.round(g/food.yld)}g raw`:`≈ ${Math.round(g*food.yld)}g cooked`):'';
     const togHTML=food.hc?`
       <div class="trow">
-        <span class="tlbl">Weighing:</span>
+        <span class="tlbl">Weigh as:</span>
         <label class="toggle"><input type="checkbox" id="tog-${food.key}" ${isC?'checked':''} onchange="togCook('${food.key}',${i})"><span class="tslider"></span></label>
         <span class="tmode" id="tmode-${food.key}">${isC?'Cooked':'Raw'}</span>
       </div>
       <div class="tnote" id="tnote-${food.key}">${note}</div>`:'';
     cards.innerHTML+=`
       <div class="rc">
-        <div class="rch">
+        <div class="rc-top">
           <div class="rcn">${food.name}</div>
           <a class="rcu" href="${usdaUrl(isC?food.fdcC:food.fdcR)}" target="_blank" rel="noopener" id="ulink-${food.key}">USDA ↗</a>
         </div>
-        <div class="rcg" id="rcg-${food.key}">${g}<span>g ${isC?'cooked':'raw'}</span></div>
-        <div class="rcm" id="rcm-${food.key}">
-          <span class="mp">${fP}g protein</span>
-          <span class="mc">${fC}g carbs</span>
-          <span class="mf2">${fF}g fat</span>
-        </div>${togHTML}
+        <div class="rc-grams" id="rcg-${food.key}">${g}<span> g ${isC?'cooked':'raw'}</span></div>
+        <div class="rc-macros" id="rcm-${food.key}">
+          <div class="rc-macro prot"><div class="mv">${fP}g</div><div class="mk">Protein</div></div>
+          <div class="rc-macro carb"><div class="mv">${fC}g</div><div class="mk">Carbs</div></div>
+          <div class="rc-macro fatt"><div class="mv">${fF}g</div><div class="mk">Fat</div></div>
+        </div>
+        ${togHTML}
       </div>`;
   });
+
   let aP=0,aC=0,aF=0;
   foods.forEach((food,i)=>{const m=getMac(food);aP+=m.p*grams[i]/100;aC+=m.c*grams[i]/100;aF+=m.f*grams[i]/100;});
   const cals=Math.round(aP*4+aC*4+aF*9);
   const fmt=v=>v.toFixed(1)+'g';
   const badge=gap=>`<span class="badge ${Math.abs(gap)>10?'bad':'ok'}">${gap>=0?'+':''}${gap.toFixed(1)}g</span>`;
   const gP=aP-pT,gC=aC-cT,gF=aF-fT;
-  document.getElementById('spt').textContent=pT+'g';document.getElementById('spa').textContent=fmt(aP);document.getElementById('spg').innerHTML=badge(gP);
-  document.getElementById('sct').textContent=cT+'g';document.getElementById('sca').textContent=fmt(aC);document.getElementById('scg').innerHTML=badge(gC);
-  document.getElementById('sft').textContent=fT+'g';document.getElementById('sfa').textContent=fmt(aF);document.getElementById('sfg').innerHTML=badge(gF);
-  document.getElementById('tcal').textContent=cals+' kcal';
+  document.getElementById('spt').textContent=pT+'g';
+  document.getElementById('spa').textContent=fmt(aP);
+  document.getElementById('spg').innerHTML=badge(gP);
+  document.getElementById('sct').textContent=cT+'g';
+  document.getElementById('sca').textContent=fmt(aC);
+  document.getElementById('scg').innerHTML=badge(gC);
+  document.getElementById('sft').textContent=fT+'g';
+  document.getElementById('sfa').textContent=fmt(aF);
+  document.getElementById('sfg').innerHTML=badge(gF);
+  document.getElementById('tcal').textContent=cals.toLocaleString()+' kcal';
+
   const big=[];
   if(Math.abs(gP)>10)big.push('protein');
   if(Math.abs(gC)>10)big.push('carbs');
   if(Math.abs(gF)>10)big.push('fat');
   const warn=document.getElementById('warn');
-  if(big.length){warn.style.display='block';warn.textContent=`⚠ Gap >10g on ${big.join(', ')}. ${!selF?'Try adding a fat source for better fat accuracy.':''}`;}
+  if(big.length){warn.style.display='block';warn.textContent=`⚠ Gap >10g on ${big.join(', ')}. ${!selF?'Adding a fat source improves fat accuracy.':''}`;}
   else warn.style.display='none';
+
   document.getElementById('results').style.display='block';
-  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),60);
+  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),80);
 }
 
 function togCook(key,idx){
@@ -491,12 +862,24 @@ function togCook(key,idx){
   const g=lastRes.grams[idx];
   const m=getMac(food);
   document.getElementById('tmode-'+key).textContent=isC?'Cooked':'Raw';
-  document.getElementById('rcg-'+key).innerHTML=`${g}<span>g ${isC?'cooked':'raw'}</span>`;
+  document.getElementById('rcg-'+key).innerHTML=`${g}<span> g ${isC?'cooked':'raw'}</span>`;
   document.getElementById('tnote-'+key).textContent=isC?`≈ ${Math.round(g/food.yld)}g raw`:`≈ ${Math.round(g*food.yld)}g cooked`;
-  document.getElementById('rcm-'+key).innerHTML=`<span class="mp">${(m.p*g/100).toFixed(1)}g protein</span><span class="mc">${(m.c*g/100).toFixed(1)}g carbs</span><span class="mf2">${(m.f*g/100).toFixed(1)}g fat</span>`;
+  const fP=(m.p*g/100).toFixed(1),fC=(m.c*g/100).toFixed(1),fF=(m.f*g/100).toFixed(1);
+  document.getElementById('rcm-'+key).innerHTML=`
+    <div class="rc-macro prot"><div class="mv">${fP}g</div><div class="mk">Protein</div></div>
+    <div class="rc-macro carb"><div class="mv">${fC}g</div><div class="mk">Carbs</div></div>
+    <div class="rc-macro fatt"><div class="mv">${fF}g</div><div class="mk">Fat</div></div>`;
   document.getElementById('ulink-'+key).href=usdaUrl(isC?food.fdcC:food.fdcR);
   if(lastRes&&!isNaN(lastRes.pT))solve();
 }
+
+function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
+
+function showResetConfirm(){
+  document.getElementById('reset-confirm').style.display='block';
+  document.getElementById('reset-confirm').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function hideResetConfirm(){document.getElementById('reset-confirm').style.display='none';}
 
 function reset(){
   selP=null;selC=null;selF=null;cookSt={};lastRes=null;fatOpen=false;
@@ -508,6 +891,8 @@ function reset(){
   document.getElementById('fat-search').classList.remove('open');
   document.getElementById('fat-btn').textContent='+ Add';
   document.getElementById('fat-sub').textContent='Enables 3-food solver — better fat accuracy';
+  document.getElementById('fat-card').classList.remove('has-fat');
+  document.getElementById('reset-confirm').style.display='none';
   updateDots(1);
   window.scrollTo({top:0,behavior:'smooth'});
 }
