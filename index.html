@@ -133,6 +133,35 @@ body{background:#f7f7f5;color:#111;font-family:-apple-system,BlinkMacSystemFont,
 
 .err{color:#d32f2f;font-size:12px;margin-top:8px;min-height:16px;padding-left:2px}
 
+/* ── SECOND CARB ────────────────────────────────────── */
+.c2-box{
+  background:#f0f8ff;border-radius:12px;
+  border:1.5px dashed #90caf9;
+  padding:14px 16px;margin-top:12px;
+  transition:border-color .2s;
+}
+.c2-box.has-c2{border-style:solid;border-color:#42a5f5}
+.c2-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.c2-hdr-left{display:flex;align-items:center;gap:10px}
+.c2-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:#e3f2fd;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0;
+}
+.c2-title{font-size:14px;font-weight:700;color:#1565c0}
+.c2-sub{font-size:11px;color:#aaa;margin-top:1px}
+.c2-btn{
+  background:#e3f2fd;border:1.5px solid #90caf9;
+  border-radius:10px;color:#1565c0;
+  font-size:13px;font-weight:700;
+  padding:8px 14px;cursor:pointer;
+  white-space:nowrap;font-family:inherit;
+  flex-shrink:0;transition:all .15s;
+}
+.c2-btn:active{background:#bbdefb}
+.c2-search{display:none;margin-top:0}
+.c2-search.open{display:block}
+
 /* ── FAT SOURCE ─────────────────────────────────────── */
 .fat-card{
   background:#fff;border-radius:16px;
@@ -426,6 +455,42 @@ body{background:#f7f7f5;color:#111;font-family:-apple-system,BlinkMacSystemFont,
         </div>
       </div>
       <div class="err" id="ec"></div>
+
+      <!-- OPTIONAL SECOND CARB -->
+      <div class="c2-box" id="c2-box" style="display:none">
+        <div class="c2-hdr">
+          <div class="c2-hdr-left">
+            <div class="c2-icon">🥗</div>
+            <div>
+              <div class="c2-title">Add 2nd carb <span style="font-weight:400;font-size:11px;color:#bbb">(optional)</span></div>
+              <div class="c2-sub" id="c2-sub">Add a veggie, second grain, or legume</div>
+            </div>
+          </div>
+          <button class="c2-btn" id="c2-btn" onclick="toggleC2()">+ Add</button>
+        </div>
+        <div class="c2-search" id="c2-search">
+          <div class="sw" style="margin-top:12px">
+            <input class="sinput" id="c2i" type="text"
+              placeholder="Search: broccoli, black beans, banana…"
+              autocomplete="off"
+              oninput="onSearch(this,'carb2')"
+              onfocus="onFocus('carb2')"
+              onblur="onBlur('carb2')">
+            <div class="dd" id="c2dd"></div>
+          </div>
+          <div class="chip" id="c2chip">
+            <span class="chip-icon">✓</span>
+            <div class="chip-info">
+              <span class="cn" id="c2cn"></span>
+              <span class="cm" id="c2cm"></span>
+            </div>
+            <div class="chip-actions">
+              <a class="cu" id="c2cu" href="#" target="_blank" rel="noopener">USDA ↗</a>
+              <div class="cx" onclick="clearSel('carb2')">×</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -589,9 +654,14 @@ const DB=[
   {key:'yellowtail',     name:'Yellowtail (sushi)',     cat:'Fish',cooked:{p:30.0,c:0.0,f:7.0},raw:{p:20.6,c:0.0,f:6.0},yld:0.80,fdcC:'174248',fdcR:'175163',hc:true},
   {key:'tilapia',        name:'Tilapia',                cat:'Fish',cooked:{p:26.0,c:0.0,f:2.7}, raw:{p:20.0,c:0.0,f:2.0}, yld:0.82,fdcC:'175177',fdcR:'175176',hc:true},
   {key:'shrimp',         name:'Shrimp',                 cat:'Fish',cooked:{p:24.0,c:0.2,f:1.7}, raw:{p:18.0,c:0.2,f:1.2}, yld:0.80,fdcC:'175180',fdcR:'175179',hc:true},
+  {key:'cod',            name:'Cod',                    cat:'Fish',cooked:{p:23.0,c:0.0,f:1.0}, raw:{p:18.0,c:0.0,f:0.7}, yld:0.80,fdcC:'171951',fdcR:'171950',hc:true},
   {key:'pork_tenderloin',name:'Pork Tenderloin',          cat:'Pork',cooked:{p:26.0,c:0.0,f:3.0}, raw:{p:21.0,c:0.0,f:2.5},yld:0.76,fdcC:'167903',fdcR:'167904',hc:true},
   {key:'pork_chop',      name:'Pork Chop (center lean)',  cat:'Pork',cooked:{p:28.0,c:0.0,f:10.0},raw:{p:19.0,c:0.0,f:7.0}, yld:0.77,fdcC:'167905',fdcR:'167906',hc:true},
   {key:'pork_ribs',      name:'Pork Ribs (country-style)',cat:'Pork',cooked:{p:29.0,c:0.0,f:11.0},raw:{p:18.0,c:0.0,f:8.0}, yld:0.72,fdcC:'167879',fdcR:'167880',hc:true},
+  {key:'sirloin',        name:'Sirloin Steak (lean)',   cat:'Beef Cuts',cooked:{p:29.0,c:0.0,f:6.0},  raw:{p:21.0,c:0.0,f:5.0},  yld:0.74,fdcC:'174496',fdcR:'174497',hc:true},
+  {key:'venison',        name:'Venison (deer)',          cat:'Game',      cooked:{p:30.0,c:0.0,f:2.6},  raw:{p:22.0,c:0.0,f:2.0},  yld:0.75,fdcC:'174430',fdcR:'174431',hc:true},
+  {key:'bison',          name:'Bison (ground)',          cat:'Game',      cooked:{p:25.0,c:0.0,f:7.0},  raw:{p:17.0,c:0.0,f:7.0},  yld:0.72,fdcC:'174404',fdcR:'174405',hc:true},
+  {key:'egg_whites',     name:'Egg Whites (cooked)',     cat:'Other',     cooked:{p:11.0,c:0.2,f:0.2},  raw:{p:10.9,c:0.7,f:0.2},  yld:0.88,fdcC:'173424',fdcR:'173424',hc:true},
   {key:'eggs',   name:'Whole Eggs',            cat:'Other',cooked:{p:13.0,c:1.0,f:11.0},raw:{p:12.5,c:0.7,f:10.0},yld:0.88,fdcC:'173423',fdcR:'748967',hc:true},
   {key:'turkey', name:'Turkey Breast',         cat:'Other',cooked:{p:29.0,c:0.0,f:1.0}, raw:{p:21.0,c:0.0,f:1.0}, yld:0.75,fdcC:'171489',fdcR:'171490',hc:true},
   {key:'cottage',name:'Cottage Cheese (lowfat)',cat:'Other',cooked:{p:11.0,c:4.0,f:1.0}, raw:{p:11.0,c:4.0,f:1.0}, yld:1.00,fdcC:'172179',fdcR:'172179',hc:false},
@@ -611,7 +681,19 @@ const DB=[
   {key:'lentils',      name:'Lentils',              cat:'Legume',cooked:{p:9.0,c:20.0,f:0.4},raw:{p:25.0,c:60.0,f:1.1},yld:2.5,fdcC:'172421',fdcR:'172420',hc:true},
   {key:'ezekiel',      name:'Ezekiel Bread',        cat:'Bread', cooked:{p:9.0,c:34.0,f:1.7},raw:{p:9.0,c:34.0,f:1.7},yld:1.0,fdcC:'370752',fdcR:'370752',hc:false},
   {key:'white_bread',  name:'White Bread',          cat:'Bread', cooked:{p:8.0,c:49.0,f:3.2},raw:{p:8.0,c:49.0,f:3.2},yld:1.0,fdcC:'353827',fdcR:'353827',hc:false},
+  {key:'corn_tortilla',  name:'Corn Tortilla',         cat:'Bread', cooked:{p:5.7,c:44.0,f:2.8},raw:{p:5.7,c:44.0,f:2.8},yld:1.0,fdcC:'368408',fdcR:'368408',hc:false},
+  {key:'cream_of_rice',  name:'Cream of Rice (cooked)', cat:'Rice & Grain',cooked:{p:1.1,c:18.0,f:0.1},raw:{p:6.0,c:79.0,f:0.5},yld:5.5,fdcC:'169696',fdcR:'169695',hc:true},
   {key:'eggplant',     name:'Eggplant (cooked)',    cat:'Veggie',cooked:{p:0.8,c:8.6,f:0.2},raw:{p:1.0,c:5.9,f:0.2},yld:0.85,fdcC:'169227',fdcR:'169228',hc:true},
+  {key:'broccoli',      name:'Broccoli (cooked)',     cat:'Veggie',cooked:{p:2.8,c:7.0,f:0.4},raw:{p:2.8,c:7.0,f:0.4},yld:0.91,fdcC:'170379',fdcR:'169967',hc:true},
+  {key:'spinach',       name:'Spinach (cooked)',      cat:'Veggie',cooked:{p:3.0,c:3.7,f:0.5},raw:{p:2.9,c:3.6,f:0.4},yld:0.91,fdcC:'168463',fdcR:'168462',hc:true},
+  {key:'cauliflower',   name:'Cauliflower (cooked)',  cat:'Veggie',cooked:{p:1.9,c:5.0,f:0.3},raw:{p:1.9,c:5.0,f:0.3},yld:0.93,fdcC:'169986',fdcR:'169986',hc:true},
+  {key:'asparagus',     name:'Asparagus (cooked)',    cat:'Veggie',cooked:{p:2.9,c:3.7,f:0.2},raw:{p:2.2,c:3.9,f:0.1},yld:0.94,fdcC:'168380',fdcR:'168381',hc:true},
+  {key:'green_beans',   name:'Green Beans (cooked)',  cat:'Veggie',cooked:{p:1.8,c:7.0,f:0.2},raw:{p:1.8,c:7.1,f:0.2},yld:0.92,fdcC:'169961',fdcR:'169962',hc:true},
+  {key:'zucchini',      name:'Zucchini (cooked)',     cat:'Veggie',cooked:{p:1.2,c:3.1,f:0.3},raw:{p:1.2,c:3.1,f:0.3},yld:0.95,fdcC:'169291',fdcR:'169292',hc:true},
+  {key:'bell_pepper',   name:'Bell Pepper (cooked)',  cat:'Veggie',cooked:{p:0.9,c:6.0,f:0.3},raw:{p:1.0,c:6.0,f:0.3},yld:0.95,fdcC:'170108',fdcR:'168994',hc:true},
+  {key:'mushrooms',     name:'Mushrooms (cooked)',    cat:'Veggie',cooked:{p:2.2,c:4.3,f:0.3},raw:{p:3.1,c:3.3,f:0.3},yld:0.65,fdcC:'169260',fdcR:'169253',hc:true},
+  {key:'kale',          name:'Kale (cooked)',         cat:'Veggie',cooked:{p:2.9,c:6.3,f:0.4},raw:{p:4.3,c:8.8,f:0.9},yld:0.91,fdcC:'323505',fdcR:'168421',hc:true},
+  {key:'cucumber',      name:'Cucumber',              cat:'Veggie',cooked:{p:0.7,c:3.6,f:0.1},raw:{p:0.7,c:3.6,f:0.1},yld:1.0,fdcC:'168409',fdcR:'168409',hc:false},
   {key:'banana',       name:'Banana',               cat:'Fruit', cooked:{p:1.1,c:23.0,f:0.3},raw:{p:1.1,c:23.0,f:0.3},yld:1.0,fdcC:'173944',fdcR:'173944',hc:false},
   {key:'butter',       name:'Butter',        cat:'Fat',cooked:{p:0.9,c:0.1,f:81.0}, raw:{p:0.9,c:0.1,f:81.0}, yld:1.0,fdcC:'173410',fdcR:'173410',hc:false},
   {key:'ghee',         name:'Ghee',          cat:'Fat',cooked:{p:0.3,c:0.0,f:99.5}, raw:{p:0.3,c:0.0,f:99.5}, yld:1.0,fdcC:'171314',fdcR:'171314',hc:false},
@@ -625,7 +707,7 @@ const DB=[
   {key:'cashews',      name:'Cashews',        cat:'Fat',cooked:{p:18.0,c:30.0,f:44.0},raw:{p:18.0,c:30.0,f:44.0},yld:1.0,fdcC:'170162',fdcR:'170162',hc:false},
 ];
 
-const PCATS=['Chicken','Ground Beef','Fish','Pork','Other'];
+const PCATS=['Chicken','Ground Beef','Fish','Pork','Beef Cuts','Game','Other'];
 const CCATS=['Rice & Grain','Potato','Legume','Bread','Fruit','Veggie'];
 const PDB=DB.filter(f=>PCATS.includes(f.cat));
 const CDB=DB.filter(f=>CCATS.includes(f.cat));
@@ -633,11 +715,11 @@ const FDB=DB.filter(f=>f.cat==='Fat');
 
 function usdaUrl(id){return `https://fdc.nal.usda.gov/food-details/${id}/nutrients`;}
 
-let selP=null,selC=null,selF=null,cookSt={},blurT={},fatOpen=false,lastRes=null;
+let selP=null,selC=null,selC2=null,selF=null,cookSt={},blurT={},fatOpen=false,c2Open=false,lastRes=null;
 
-function pool(t){return t==='protein'?PDB:t==='carb'?CDB:FDB;}
-function ddEl(t){return document.getElementById(t==='protein'?'pdd':t==='carb'?'cdd':'fdd');}
-function inEl(t){return document.getElementById(t==='protein'?'pi':t==='carb'?'ci':'fi');}
+function pool(t){return t==='protein'?PDB:t==='carb'||t==='carb2'?CDB:FDB;}
+function ddEl(t){return document.getElementById(t==='protein'?'pdd':t==='carb'?'cdd':t==='carb2'?'c2dd':'fdd');}
+function inEl(t){return document.getElementById(t==='protein'?'pi':t==='carb'?'ci':t==='carb2'?'c2i':'fi');}
 
 function onSearch(el,t){
   const q=el.value.trim().toLowerCase();
@@ -690,22 +772,24 @@ function pick(key,t){
   inEl(t).value=food.name;
   ddEl(t).classList.remove('open');
   const m=food.cooked;
-  const pre=t==='protein'?'p':t==='carb'?'c':'f';
+  const pre=t==='protein'?'p':t==='carb'?'c':t==='carb2'?'c2':'f';
   document.getElementById(pre+'cn').textContent=food.name;
   document.getElementById(pre+'cm').textContent=`${m.p}g protein · ${m.c}g carbs · ${m.f}g fat / 100g`;
   document.getElementById(pre+'cu').href=usdaUrl(food.fdcC);
   document.getElementById(pre+'chip').classList.add('show');
   if(t==='protein'){selP=food;document.getElementById('ep').textContent='';showStep(2);}
-  else if(t==='carb'){selC=food;document.getElementById('ec').textContent='';showStep(3);}
+  else if(t==='carb'){selC=food;document.getElementById('ec').textContent='';showStep(3);document.getElementById('c2-box').style.display='block';}
+  else if(t==='carb2'){selC2=food;document.getElementById('c2-sub').textContent='Active: '+food.name;document.getElementById('c2-box').classList.add('has-c2');}
   else{selF=food;document.getElementById('fat-sub').textContent='Active: '+food.name;document.getElementById('fat-card').classList.add('has-fat');}
 }
 
 function clearSel(t){
-  const pre=t==='protein'?'p':t==='carb'?'c':'f';
+  const pre=t==='protein'?'p':t==='carb'?'c':t==='carb2'?'c2':'f';
   document.getElementById(pre+'chip').classList.remove('show');
   inEl(t).value='';
-  if(t==='protein'){selP=null;['step2','step3','results'].forEach(id=>document.getElementById(id).style.display='none');updateDots(1);}
-  else if(t==='carb'){selC=null;['step3','results'].forEach(id=>document.getElementById(id).style.display='none');updateDots(2);}
+  if(t==='protein'){selP=null;['step2','step3','results'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('c2-box').style.display='none';updateDots(1);}
+  else if(t==='carb'){selC=null;['step3','results'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('c2-box').style.display='none';clearSel('carb2');updateDots(2);}
+  else if(t==='carb2'){selC2=null;document.getElementById('c2i').value='';document.getElementById('c2chip').classList.remove('show');document.getElementById('c2-sub').textContent='Add a veggie, second grain, or legume';document.getElementById('c2-box').classList.remove('has-c2');}
   else{selF=null;document.getElementById('fat-sub').textContent='Enables 3-food solver — better fat accuracy';document.getElementById('fat-card').classList.remove('has-fat');}
 }
 
@@ -714,6 +798,13 @@ function toggleFat(){
   document.getElementById('fat-search').classList.toggle('open',fatOpen);
   document.getElementById('fat-btn').textContent=fatOpen?'− Remove':'+ Add';
   if(!fatOpen){clearSel('fat');}
+}
+
+function toggleC2(){
+  c2Open=!c2Open;
+  document.getElementById('c2-search').classList.toggle('open',c2Open);
+  document.getElementById('c2-btn').textContent=c2Open?'− Remove':'+ Add';
+  if(!c2Open) clearSel('carb2');
 }
 
 function showStep(n){
@@ -747,49 +838,53 @@ function solve(){
   btn.classList.add('loading');btn.textContent='Calculating…';
 
   setTimeout(()=>{
-    const foods=selF?[selP,selC,selF]:[selP,selC];
+    const foods=[selP,selC];
+  if(selC2) foods.push(selC2);
+  if(selF) foods.push(selF);
     const mac=foods.map(f=>getMac(f));
-    const grams=foods.length===2?s2(mac[0],mac[1],[pT,cT,fT]):s3(mac[0],mac[1],mac[2],[pT,cT,fT]);
+    const grams=sN(mac,[pT,cT,fT]);
     lastRes={foods,grams,pT,cT,fT};
     display(foods,grams,pT,cT,fT);
     btn.classList.remove('loading');btn.textContent='Calculate Portions →';
   },120);
 }
 
-function s2(f1,f2,b){
-  const MIN=50,MAX=900;
-  const a11=(f1.p**2+f1.c**2+f1.f**2)/10000;
-  const a12=(f1.p*f2.p+f1.c*f2.c+f1.f*f2.f)/10000;
-  const a22=(f2.p**2+f2.c**2+f2.f**2)/10000;
-  const b1=(f1.p*b[0]+f1.c*b[1]+f1.f*b[2])/100;
-  const b2=(f2.p*b[0]+f2.c*b[1]+f2.f*b[2])/100;
-  let g1=0,g2=0,fx1=false,fx2=false;
-  for(let i=0;i<20;i++){
-    if(fx1&&fx2)break;
-    if(!fx1&&!fx2){const det=a11*a22-a12**2;if(Math.abs(det)<1e-10){g1=Math.max(MIN,Math.min(MAX,b1/(a11+1e-9)));g2=Math.max(MIN,Math.min(MAX,b2/(a22+1e-9)));break;}g1=(a22*b1-a12*b2)/det;g2=(a11*b2-a12*b1)/det;}
-    else if(fx1)g2=a22>1e-10?(b2-a12*g1)/a22:MIN;
-    else g1=a11>1e-10?(b1-a12*g2)/a11:MIN;
-    let n1=fx1,n2=fx2;
-    if(!fx1&&(g1<MIN||g1>MAX)){g1=Math.max(MIN,Math.min(MAX,g1));n1=true;}
-    if(!fx2&&(g2<MIN||g2>MAX)){g2=Math.max(MIN,Math.min(MAX,g2));n2=true;}
-    if(n1===fx1&&n2===fx2)break;fx1=n1;fx2=n2;
+function sN(macros, b) {
+  const n = macros.length;
+  // For 2 foods use analytical least-squares (exact, fast)
+  if (n === 2) {
+    const [f1,f2] = macros;
+    const MIN=50,MAX=900;
+    const a11=(f1.p**2+f1.c**2+f1.f**2)/10000;
+    const a12=(f1.p*f2.p+f1.c*f2.c+f1.f*f2.f)/10000;
+    const a22=(f2.p**2+f2.c**2+f2.f**2)/10000;
+    const b1=(f1.p*b[0]+f1.c*b[1]+f1.f*b[2])/100;
+    const b2=(f2.p*b[0]+f2.c*b[1]+f2.f*b[2])/100;
+    let g1=0,g2=0,fx1=false,fx2=false;
+    for(let i=0;i<20;i++){
+      if(fx1&&fx2)break;
+      if(!fx1&&!fx2){const det=a11*a22-a12**2;if(Math.abs(det)<1e-10){g1=Math.max(MIN,Math.min(MAX,b1/(a11+1e-9)));g2=Math.max(MIN,Math.min(MAX,b2/(a22+1e-9)));break;}g1=(a22*b1-a12*b2)/det;g2=(a11*b2-a12*b1)/det;}
+      else if(fx1)g2=a22>1e-10?(b2-a12*g1)/a22:MIN;
+      else g1=a11>1e-10?(b1-a12*g2)/a11:MIN;
+      let n1=fx1,n2=fx2;
+      if(!fx1&&(g1<MIN||g1>MAX)){g1=Math.max(MIN,Math.min(MAX,g1));n1=true;}
+      if(!fx2&&(g2<MIN||g2>MAX)){g2=Math.max(MIN,Math.min(MAX,g2));n2=true;}
+      if(n1===fx1&&n2===fx2)break;fx1=n1;fx2=n2;
+    }
+    return[Math.round(g1),Math.round(g2)];
   }
-  return[Math.round(g1),Math.round(g2)];
-}
-
-function s3(f1,f2,f3,b){
-  let g=[150,150,20];
-  const bnd=[[50,900],[50,900],[5,300]];
-  for(let i=0;i<3000;i++){
-    const aP=(f1.p*g[0]+f2.p*g[1]+f3.p*g[2])/100;
-    const aC=(f1.c*g[0]+f2.c*g[1]+f3.c*g[2])/100;
-    const aF=(f1.f*g[0]+f2.f*g[1]+f3.f*g[2])/100;
+  // For 3-4 foods use gradient descent
+  const bounds = macros.map((_,i) => i < 2 ? [50,900] : i === n-1 && macros[i].cat === 'Fat' ? [5,300] : [50,700]);
+  let g = macros.map((_,i) => i < 2 ? 150 : 30);
+  for(let iter=0;iter<4000;iter++){
+    let aP=0,aC=0,aF=0;
+    macros.forEach((f,i)=>{aP+=f.p*g[i]/100;aC+=f.c*g[i]/100;aF+=f.f*g[i]/100;});
     const ep=aP-b[0],ec=aC-b[1],ef=aF-b[2];
-    const r=0.8*(1-i/3000);
-    g[0]-=r*(ep*f1.p+ec*f1.c+ef*f1.f)/100;
-    g[1]-=r*(ep*f2.p+ec*f2.c+ef*f2.f)/100;
-    g[2]-=r*(ep*f3.p+ec*f3.c+ef*f3.f)/100;
-    for(let j=0;j<3;j++)g[j]=Math.max(bnd[j][0],Math.min(bnd[j][1],g[j]));
+    const r=0.8*(1-iter/4000);
+    macros.forEach((f,i)=>{
+      g[i]-=r*(ep*f.p+ec*f.c+ef*f.f)/100;
+      g[i]=Math.max(bounds[i][0],Math.min(bounds[i][1],g[i]));
+    });
   }
   return g.map(v=>Math.round(v));
 }
@@ -883,12 +978,17 @@ function hideResetConfirm(){document.getElementById('reset-confirm').style.displ
 
 function reset(){
   selP=null;selC=null;selF=null;cookSt={};lastRes=null;fatOpen=false;
-  ['pi','ci','fi'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['pchip','cchip','fchip'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  ['pi','ci','c2i','fi'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); selC2=null;c2Open=false;
+  ['pchip','cchip','c2chip','fchip'].forEach(id=>document.getElementById(id).classList.remove('show'));
   ['step2','step3','results'].forEach(id=>document.getElementById(id).style.display='none');
   ['tp','tc','tf'].forEach(id=>document.getElementById(id).value='');
   ['ep','ec','em'].forEach(id=>document.getElementById(id).textContent='');
   document.getElementById('fat-search').classList.remove('open');
+  document.getElementById('c2-search').classList.remove('open');
+  document.getElementById('c2-btn').textContent='+ Add';
+  document.getElementById('c2-sub').textContent='Add a veggie, second grain, or legume';
+  document.getElementById('c2-box').classList.remove('has-c2');
+  document.getElementById('c2-box').style.display='none';
   document.getElementById('fat-btn').textContent='+ Add';
   document.getElementById('fat-sub').textContent='Enables 3-food solver — better fat accuracy';
   document.getElementById('fat-card').classList.remove('has-fat');
